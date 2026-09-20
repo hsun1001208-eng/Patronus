@@ -78,9 +78,9 @@
                 ctx.rotate(this.angle);
 
                 const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.rx);
-                grad.addColorStop(0, `rgba(210, 245, 255, ${alpha * 0.22})`);
-                grad.addColorStop(0.4, `rgba(100, 200, 255, ${alpha * 0.12})`);
-                grad.addColorStop(0.8, `rgba(30, 110, 220, ${alpha * 0.03})`);
+                grad.addColorStop(0, `rgba(210, 245, 255, ${alpha * 0.25})`);
+                grad.addColorStop(0.4, `rgba(100, 200, 255, ${alpha * 0.15})`);
+                grad.addColorStop(0.8, `rgba(30, 110, 220, ${alpha * 0.04})`);
                 grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
                 ctx.fillStyle = grad;
@@ -149,97 +149,54 @@
 
             ctx.globalCompositeOperation = 'lighter';
 
-            // --- Pass 1: 夢幻超巨額打霧外暈 (Ultra Foggy Ambient Vapor Cloud, blur 68px) ---
+            // --- Pass 1: 超強羽化煙霧外暈 (Ultra Heavy Blurred Ambient Fog, blur 42px) ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(68px)';
-            ctx.shadowColor = '#60d0ff';
-            ctx.shadowBlur = 50;
+            if (ctx.filter !== undefined) ctx.filter = 'blur(42px)';
+            ctx.shadowColor = '#50c8ff';
+            ctx.shadowBlur = 35;
             
             drawDolphinMesh(ctx, time);
             const outerGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.50)');
-            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.30)');
-            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.15)');
-            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.03)');
+            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.45)');
+            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.28)');
+            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.14)');
+            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.04)');
             ctx.fillStyle = outerGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 2: 大範圍蒸氣過渡霧 (Wide Vapor Transition Blur, blur 40px) ---
+            // --- Pass 2: 極其柔和半透明中層煙霧 (Heavy Blur Smoke Body, blur 24px) ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(40px)';
-
-            drawDolphinMesh(ctx, time);
-            const transitionGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.48)');
-            transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.32)');
-            transitionGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.16)');
-            transitionGrad.addColorStop(1, 'rgba(10, 80, 200, 0.04)');
-            ctx.fillStyle = transitionGrad;
-            ctx.fill();
-            ctx.restore();
-
-            // --- Pass 3: 中層軟霧輪廓 (Mid Fog Layer, blur 22px) ---
-            ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(22px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(24px)';
 
             drawDolphinMesh(ctx, time);
             const midGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.35)');
+            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.52)');
+            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.32)');
             midGrad.addColorStop(0.75, 'rgba(60, 170, 250, 0.18)');
             midGrad.addColorStop(1, 'rgba(10, 90, 210, 0.05)');
             ctx.fillStyle = midGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 4: 核心發光柔霧（ blur 16px，徹底消解所有硬線） ---
+            // --- Pass 3: 核心靈光（保持高模糊 blur 12px，徹底取消銳利邊線） ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(12px)';
 
             drawDolphinMesh(ctx, time);
             const coreGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.58)');
-            coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.35)');
-            coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.16)');
-            coreGrad.addColorStop(1, 'rgba(20, 120, 220, 0.03)');
+            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.60)');
+            coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.38)');
+            coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.18)');
+            coreGrad.addColorStop(1, 'rgba(20, 120, 220, 0.04)');
             ctx.fillStyle = coreGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 5: 身體週邊附著飄散靈氣雲霧 (Surrounding Vapor Aura) ---
+            // --- Pass 4: 拖尾流體蒸氣 (Trailing Vapor Wisps) ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
 
-            // 在海豚身體周圍（頭、背鰭、胸鰭、尾巴）額外釋放濃霧微粒
-            const keyPoints = [
-                { x: 180, y: getSpineY(180, time) }, // Snout
-                { x: 50, y: getSpineY(50, time) + 35 }, // Dorsal fin
-                { x: 20, y: getSpineY(20, time) - 40 }, // Pectoral fin
-                { x: -100, y: getSpineY(-100, time) }, // Back body
-                { x: -175, y: getSpineY(-175, time) } // Tail
-            ];
-
-            for (let pt of keyPoints) {
-                if (Math.random() < 0.6) {
-                    const localX = pt.x + (Math.random() - 0.5) * 40;
-                    const localY = pt.y + (Math.random() - 0.5) * 40;
-                    const wx = pos.x + (localX * cos - localY * sin);
-                    const wy = pos.y + (localX * sin + localY * cos);
-
-                    smokePuffs.push(new SmokePuff(
-                        wx, wy,
-                        -cos * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
-                        -sin * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
-                        Math.random() * 38 + 28,
-                        Math.random() * 30 + 20,
-                        Math.random() * Math.PI * 2,
-                        Math.random() * 35 + 25
-                    ));
-                }
-            }
-
-            // --- Pass 6: 尾部主要流體蒸氣 (Trailing Main Tail Vapor) ---
             const tailY = getSpineY(-178, time);
             for (let k = 0; k < 5; k++) {
                 const tWy = tailY + (Math.random() - 0.5) * 35;
@@ -250,8 +207,8 @@
                     wx, wy,
                     -cos * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
                     -sin * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    Math.random() * 38 + 25,
-                    Math.random() * 30 + 18,
+                    Math.random() * 35 + 25,
+                    Math.random() * 28 + 18,
                     Math.random() * Math.PI * 2,
                     Math.random() * 38 + 28
                 ));
@@ -315,7 +272,7 @@
             // Render ambient smoke trail
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            if (ctx.filter !== undefined) ctx.filter = 'blur(18px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
 
             for (let i = smokePuffs.length - 1; i >= 0; i--) {
                 smokePuffs[i].update();
