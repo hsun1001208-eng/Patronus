@@ -41,148 +41,215 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Trail smoke particles
-        const particles = [];
+        // Dynamic Smoke Wisps Array
+        const smokeWisps = [];
 
-        class TailSmoke {
-            constructor(x, y, vx, vy) {
+        class WispParticle {
+            constructor(x, y, vx, vy, size, maxLife, type = 'wisp') {
                 this.x = x;
                 this.y = y;
                 this.vx = vx;
                 this.vy = vy;
-                this.size = Math.random() * 18 + 12;
-                this.life = 1.0;
-                this.decay = Math.random() * 0.03 + 0.02;
+                this.size = size;
+                this.life = maxLife;
+                this.maxLife = maxLife;
+                this.type = type;
+                this.angle = Math.random() * Math.PI * 2;
+                this.vRot = (Math.random() - 0.5) * 0.08;
             }
+
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.size += 0.4;
-                this.life -= this.decay;
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+                this.size += (this.type === 'tail' ? 0.6 : 0.25);
+                this.angle += this.vRot;
+                this.life--;
             }
+
             draw(ctx) {
                 if (this.life <= 0) return;
+                const alpha = Math.sin((this.life / this.maxLife) * Math.PI);
                 ctx.save();
-                ctx.globalCompositeOperation = 'lighter';
-                const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
-                grad.addColorStop(0, `rgba(180, 235, 255, ${this.life * 0.4})`);
-                grad.addColorStop(0.5, `rgba(40, 160, 240, ${this.life * 0.15})`);
-                grad.addColorStop(1, 'rgba(0, 50, 150, 0)');
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                if (this.type === 'tail') {
+                    grad.addColorStop(0, `rgba(220, 245, 255, ${alpha * 0.45})`);
+                    grad.addColorStop(0.35, `rgba(50, 180, 255, ${alpha * 0.2})`);
+                    grad.addColorStop(0.8, `rgba(5, 70, 180, ${alpha * 0.05})`);
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                } else if (this.type === 'edge') {
+                    grad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.6})`);
+                    grad.addColorStop(0.4, `rgba(100, 220, 255, ${alpha * 0.25})`);
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                } else {
+                    grad.addColorStop(0, `rgba(180, 235, 255, ${alpha * 0.35})`);
+                    grad.addColorStop(0.5, `rgba(15, 120, 230, ${alpha * 0.12})`);
+                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                }
+
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, this.size, this.size * 0.6, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
         }
 
-        // Real organic Dolphin Skeleton Points deformed along a backbone Spine Curve
-        // x offset along spine: Snout (+120) to Tail (-120)
-        function drawDolphinBody(ctx, time) {
-            // Frequency & speed of swimming tail stroke
+        // Generate Dolphin Path deformer
+        function getSpineY(x, time) {
             const swimFreq = 16.0;
-            const wave = Math.sin(time * swimFreq);
-            const waveCos = Math.cos(time * swimFreq);
-
-            // Compute spine offsets (Y offset perpendicular to spine)
-            // Head stays stable, mid body flexes, tail flexes heavily
-            function getSpineY(x) {
-                // x goes from +130 (snout) to -120 (tail)
-                const norm = (130 - x) / 250; // 0 at head, 1 at tail
-                if (norm < 0.25) {
-                    return Math.sin(norm * Math.PI) * 2; // Head stays nearly still
-                }
-                const flexFactor = Math.pow((norm - 0.25) / 0.75, 1.8);
-                return Math.sin(time * swimFreq - norm * 3.5) * 28 * flexFactor;
+            const norm = (130 - x) / 250;
+            if (norm < 0.2) {
+                return Math.sin(norm * Math.PI) * 1.5;
             }
+            const flexFactor = Math.pow((norm - 0.2) / 0.8, 1.85);
+            return Math.sin(time * swimFreq - norm * 3.6) * 30 * flexFactor;
+        }
 
-            // Generate Spine reference points
-            const spine = [];
-            for (let x = 130; x >= -130; x -= 5) {
-                spine.push({ x: x, y: getSpineY(x) });
-            }
-
-            // Build crisp, anatomically recognizable Dolphin 2D Outline
-            ctx.save();
-            ctx.shadowColor = '#00e5ff';
-            ctx.shadowBlur = 20;
-
-            // Gradient filling for magical Patronus look
-            const grad = ctx.createLinearGradient(120, 0, -120, 0);
-            grad.addColorStop(0, '#ffffff');       // Pure bright head
-            grad.addColorStop(0.3, '#a5f3fc');     // Glowing cyan neck
-            grad.addColorStop(0.7, '#38bdf8');     // Bright blue body
-            grad.addColorStop(1.0, '#0284c7');     // Ether tail
-
-            ctx.fillStyle = grad;
-            ctx.strokeStyle = '#e0f2fe';
-            ctx.lineWidth = 2.5;
-
+        function createDolphinPath(ctx, time) {
             ctx.beginPath();
-
-            // 1. Start at Beak tip
-            const snoutY = getSpineY(130);
+            const snoutY = getSpineY(130, time);
             ctx.moveTo(130, snoutY);
 
-            // 2. Beak top -> Melon (Forehead bulge)
-            ctx.quadraticCurveTo(110, getSpineY(110) - 8, 90, getSpineY(90) - 16);
-            ctx.quadraticCurveTo(65, getSpineY(65) - 28, 30, getSpineY(30) - 30);
+            ctx.quadraticCurveTo(110, getSpineY(110, time) - 8, 90, getSpineY(90, time) - 16);
+            ctx.quadraticCurveTo(65, getSpineY(65, time) - 28, 30, getSpineY(30, time) - 30);
 
-            // 3. Dorsal Fin (背鰭)
-            const dorsalBaseY = getSpineY(5);
+            const dorsalBaseY = getSpineY(5, time);
             ctx.lineTo(15, dorsalBaseY - 30);
-            ctx.quadraticCurveTo(-5, dorsalBaseY - 65, -20, dorsalBaseY - 68); // Tip curved back
-            ctx.quadraticCurveTo(-15, dorsalBaseY - 42, -22, dorsalBaseY - 26); // Trailing edge
+            ctx.quadraticCurveTo(-5, dorsalBaseY - 65, -20, dorsalBaseY - 68);
+            ctx.quadraticCurveTo(-15, dorsalBaseY - 42, -22, dorsalBaseY - 26);
 
-            // 4. Back -> Tail Stock
-            ctx.quadraticCurveTo(-60, getSpineY(-60) - 18, -100, getSpineY(-100) - 8);
+            ctx.quadraticCurveTo(-60, getSpineY(-60, time) - 18, -100, getSpineY(-100, time) - 8);
 
-            // 5. Upper Tail Fluke Blade (尾鰭上葉)
-            const tailY = getSpineY(-125);
+            const tailY = getSpineY(-125, time);
             ctx.lineTo(-120, tailY - 32);
             ctx.quadraticCurveTo(-128, tailY - 18, -125, tailY);
-
-            // 6. Lower Tail Fluke Blade (尾鰭下葉)
             ctx.quadraticCurveTo(-128, tailY + 18, -120, tailY + 32);
 
-            // 7. Tail Stock Bottom -> Belly
-            ctx.lineTo(-100, getSpineY(-100) + 8);
-            ctx.quadraticCurveTo(-60, getSpineY(-60) + 16, -20, getSpineY(-20) + 22);
+            ctx.lineTo(-100, getSpineY(-100, time) + 8);
+            ctx.quadraticCurveTo(-60, getSpineY(-60, time) + 16, -20, getSpineY(-20, time) + 22);
 
-            // 8. Pectoral Flipper (胸鰭)
-            const pecBaseY = getSpineY(15);
+            const pecBaseY = getSpineY(15, time);
             ctx.lineTo(10, pecBaseY + 22);
-            ctx.quadraticCurveTo(-10, pecBaseY + 52, -28, pecBaseY + 56); // Tip
-            ctx.quadraticCurveTo(-15, pecBaseY + 35, 30, pecBaseY + 20); // Inner trailing edge
+            ctx.quadraticCurveTo(-10, pecBaseY + 52, -28, pecBaseY + 56);
+            ctx.quadraticCurveTo(-15, pecBaseY + 35, 30, pecBaseY + 20);
 
-            // 9. Lower Jaw / Beak bottom
-            ctx.quadraticCurveTo(70, getSpineY(70) + 16, 110, getSpineY(110) + 6);
+            ctx.quadraticCurveTo(70, getSpineY(70, time) + 16, 110, getSpineY(110, time) + 6);
             ctx.lineTo(130, snoutY);
-
             ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
+        }
 
-            // Inner Smoky Aura Wisps inside the dolphin body
+        function drawPatronusDolphin(ctx, time, pos) {
+            ctx.save();
+            ctx.translate(pos.x, pos.y);
+            ctx.rotate(pos.angle);
+
+            // 1. Soft Semi-Transparent Ethereal Base Body
+            ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.beginPath();
-            ctx.arc(80, getSpineY(80), 12, 0, Math.PI * 2);
-            ctx.arc(30, getSpineY(30), 18, 0, Math.PI * 2);
-            ctx.arc(-20, getSpineY(-20), 14, 0, Math.PI * 2);
+
+            // Glow Pass 1: Outer Ethereal Atmosphere
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 35;
+            createDolphinPath(ctx, time);
+            const outerGrad = ctx.createLinearGradient(130, 0, -125, 0);
+            outerGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+            outerGrad.addColorStop(0.3, 'rgba(165, 243, 252, 0.35)');
+            outerGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.25)');
+            outerGrad.addColorStop(1, 'rgba(2, 132, 199, 0.15)');
+            ctx.fillStyle = outerGrad;
             ctx.fill();
 
+            // Glow Pass 2: Bright Inner Spirit Core
+            ctx.shadowColor = '#e0f2fe';
+            ctx.shadowBlur = 15;
+            createDolphinPath(ctx, time);
+            const innerGrad = ctx.createLinearGradient(130, 0, -125, 0);
+            innerGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+            innerGrad.addColorStop(0.25, 'rgba(224, 242, 254, 0.4)');
+            innerGrad.addColorStop(0.65, 'rgba(125, 211, 252, 0.25)');
+            innerGrad.addColorStop(1, 'rgba(14, 165, 233, 0.1)');
+            ctx.fillStyle = innerGrad;
+            ctx.fill();
+
+            // Glow Pass 3: Soft Silver Rim Light Contour (no solid hard strokes)
+            ctx.strokeStyle = 'rgba(240, 249, 255, 0.65)';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
             ctx.restore();
 
-            // Spawn smoke particles from tail fluke
-            const tailWorldY = tailY;
-            return { tailX: -125, tailY: tailWorldY };
+            // 2. Dynamic Internal Volumetric Smoke (霧狀靈體感)
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+
+            // Flowing interior smoke blobs moving along spine
+            const spinePoints = [110, 80, 50, 20, -10, -40, -70, -95];
+            spinePoints.forEach((px, i) => {
+                const py = getSpineY(px, time);
+                const size = (1 - Math.abs(px) / 140) * 22 + 10;
+                const offset = Math.sin(time * 12 + i) * 6;
+
+                const smkGrad = ctx.createRadialGradient(px, py + offset, 0, px, py + offset, size);
+                smkGrad.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
+                smkGrad.addColorStop(0.5, 'rgba(125, 211, 252, 0.18)');
+                smkGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = smkGrad;
+                ctx.beginPath();
+                ctx.arc(px, py + offset, size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.restore();
+
+            // 3. Emit Tail Smoke & Edge Wisps
+            const cos = Math.cos(pos.angle);
+            const sin = Math.sin(pos.angle);
+
+            // Tail Fluke Smoke Emission (霧狀長尾巴)
+            const tailY = getSpineY(-125, time);
+            const tailWx = pos.x + (-125 * cos - tailY * sin);
+            const tailWy = pos.y + (-125 * sin + tailY * cos);
+
+            for (let k = 0; k < 4; k++) {
+                smokeWisps.push(new WispParticle(
+                    tailWx + (Math.random() - 0.5) * 16,
+                    tailWy + (Math.random() - 0.5) * 16,
+                    -cos * (Math.random() * 5 + 3) + (Math.random() - 0.5) * 2,
+                    -sin * (Math.random() * 5 + 3) + (Math.random() - 0.5) * 2,
+                    Math.random() * 22 + 16,
+                    Math.random() * 35 + 25,
+                    'tail'
+                ));
+            }
+
+            // Body Edge Wisps (靈魂煙霧殘影)
+            if (Math.random() < 0.7) {
+                const randX = (Math.random() - 0.5) * 200;
+                const randY = getSpineY(randX, time) + (Math.random() - 0.5) * 25;
+                const wx = pos.x + (randX * cos - randY * sin);
+                const wy = pos.y + (randX * sin + randY * cos);
+
+                smokeWisps.push(new WispParticle(
+                    wx, wy,
+                    -cos * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 1.5,
+                    -sin * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 1.5,
+                    Math.random() * 14 + 10,
+                    Math.random() * 25 + 15,
+                    'edge'
+                ));
+            }
+
+            ctx.restore();
         }
 
         let isAnimating = false;
         let animProgress = 0;
         let time = 0;
-        const duration = 2.2; // Fast swim speed (~2.2 seconds across screen)
+        const duration = 2.2;
 
         function triggerPatronus() {
             if (isAnimating) return;
@@ -194,18 +261,15 @@
         window.addEventListener('pointerdown', triggerPatronus);
         window.addEventListener('touchstart', triggerPatronus, { passive: true });
 
-        // Trajectory from Right-Bottom to Left-Top
         function getPathPos(t) {
             const startX = width + 200;
             const startY = height + 200;
             const endX = -250;
             const endY = -250;
 
-            // Organic curved swimming arch
             const x = startX + (endX - startX) * t + Math.sin(t * Math.PI) * 120;
             const y = startY + (endY - startY) * t - Math.sin(t * Math.PI) * 80;
 
-            // Calculate tangent angle for facing direction
             const dt = 0.005;
             const nextX = startX + (endX - startX) * (t + dt) + Math.sin((t + dt) * Math.PI) * 120;
             const nextY = startY + (endY - startY) * (t + dt) - Math.sin((t + dt) * Math.PI) * 80;
@@ -218,7 +282,6 @@
         const clockStep = 1 / 60;
 
         function render() {
-            // Pure pitch black background
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, width, height);
 
@@ -229,43 +292,23 @@
 
                 if (animProgress <= 1.0) {
                     const pos = getPathPos(animProgress);
-
-                    ctx.save();
-                    ctx.translate(pos.x, pos.y);
-                    ctx.rotate(pos.angle);
-
-                    const tailLocal = drawDolphinBody(ctx, time);
-
-                    // Transform tail coordinates to world coordinates for smoke particles
-                    const cos = Math.cos(pos.angle);
-                    const sin = Math.sin(pos.angle);
-                    const tailWx = pos.x + (tailLocal.tailX * cos - tailLocal.tailY * sin);
-                    const tailWy = pos.y + (tailLocal.tailX * sin + tailLocal.tailY * cos);
-
-                    // Emit tail smoke
-                    for (let k = 0; k < 3; k++) {
-                        particles.push(new TailSmoke(
-                            tailWx + (Math.random() - 0.5) * 10,
-                            tailWy + (Math.random() - 0.5) * 10,
-                            -cos * (Math.random() * 4 + 2) + (Math.random() - 0.5) * 2,
-                            -sin * (Math.random() * 4 + 2) + (Math.random() - 0.5) * 2
-                        ));
-                    }
-
-                    ctx.restore();
+                    drawPatronusDolphin(ctx, time, pos);
                 } else {
                     isAnimating = false;
                 }
             }
 
-            // Draw trailing smoke particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw(ctx);
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
+            // Draw Ethereal Wisps & Smoke Trail
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = smokeWisps.length - 1; i >= 0; i--) {
+                smokeWisps[i].update();
+                smokeWisps[i].draw(ctx);
+                if (smokeWisps[i].life <= 0) {
+                    smokeWisps.splice(i, 1);
                 }
             }
+            ctx.restore();
 
             requestAnimationFrame(render);
         }
