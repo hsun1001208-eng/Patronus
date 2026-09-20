@@ -1,364 +1,219 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Dolphin Patronus</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
-    body { background:#000; touch-action: manipulation; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Dolphin Patronus</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: manipulation;
+  }
 
-    #stage {
-      position: fixed;
-      inset: 0;
-      overflow: hidden;
-      background: #000;
-    }
+  #stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #000;
+    cursor: pointer;
+  }
 
-    #dolphin {
-      position: absolute;
-      width: 210px;
-      height: 150px;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      pointer-events: none;
-      will-change: transform, opacity;
-      transform-origin: 50% 50%;
-    }
+  /* The generated dolphin artwork has a black background.
+     Screen blending makes that black disappear into the black stage. */
+  #dolphin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: clamp(280px, 31vw, 430px);
+    height: auto;
+    opacity: 0;
+    pointer-events: none;
+    user-select: none;
+    mix-blend-mode: screen;
+    transform-origin: 50% 55%;
+    will-change: transform, opacity;
+  }
 
-    #dolphin svg {
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-    }
+  #dolphin.visible {
+    opacity: 1;
+  }
 
-    /* The duplicated blurred silhouette makes the animal look like a luminous Patronus
-       rather than a solid sticker. */
-    .mist {
-      fill: #c9f4ff;
-      opacity: .28;
-      filter: url(#smokeBlur);
-    }
+  /* Subtle breathing / swimming motion on top of the curved path.
+     This is intentionally small so it feels like a living animal,
+     not a shaking image. */
+  #dolphin.swimming {
+    animation: bodySwim 0.72s ease-in-out infinite;
+  }
 
-    .dolphin-main {
-      fill: url(#patronusGradient);
-      stroke: #d8f8ff;
-      stroke-width: 1.4;
-      stroke-linejoin: round;
+  @keyframes bodySwim {
+    0%, 100% {
+      filter:
+        drop-shadow(0 0 8px rgba(135,220,255,.55))
+        drop-shadow(0 0 24px rgba(60,150,255,.28));
     }
+    50% {
+      filter:
+        drop-shadow(0 0 14px rgba(180,240,255,.9))
+        drop-shadow(0 0 34px rgba(60,150,255,.45));
+    }
+  }
 
-    .dolphin-highlight {
-      fill: none;
-      stroke: rgba(255,255,255,.82);
-      stroke-width: 2.2;
-      stroke-linecap: round;
-      opacity: .8;
-    }
-
-    .fin {
-      fill: #a8e9fa;
-      opacity: .9;
-      transform-box: fill-box;
-      transform-origin: center;
-    }
-
-    .eye {
-      fill: #07131b;
-      opacity: .9;
-    }
-
-    .smoke-particle {
-      fill: #dffaff;
-      opacity: 0;
-      filter: url(#smallBlur);
-      transform-box: fill-box;
-      transform-origin: center;
-    }
-
-    /* Actual swimming motion: body flexes, tail beats, pectoral fins paddle. */
-    #dolphin.swimming .body-group {
-      animation: bodySwim .42s ease-in-out infinite;
-      transform-box: fill-box;
-      transform-origin: 52% 50%;
-    }
-
-    #dolphin.swimming .tail-group {
-      animation: tailBeat .24s ease-in-out infinite alternate;
-      transform-box: fill-box;
-      transform-origin: 30% 50%;
-    }
-
-    #dolphin.swimming .fin-front {
-      animation: finStroke .34s ease-in-out infinite alternate;
-      transform-box: fill-box;
-      transform-origin: 50% 20%;
-    }
-
-    #dolphin.swimming .fin-back {
-      animation: finStrokeBack .34s ease-in-out infinite alternate;
-      transform-box: fill-box;
-      transform-origin: 50% 20%;
-    }
-
-    #dolphin.swimming .smoke-particle {
-      animation: smokeTrail 1.25s ease-out infinite;
-    }
-    #dolphin.swimming .p2 { animation-delay: .28s; }
-    #dolphin.swimming .p3 { animation-delay: .56s; }
-    #dolphin.swimming .p4 { animation-delay: .84s; }
-
-    @keyframes bodySwim {
-      0%,100% { transform: rotate(-2deg) translateY(0); }
-      50% { transform: rotate(3deg) translateY(2px); }
-    }
-    @keyframes tailBeat {
-      0% { transform: rotate(-13deg) scaleY(.96); }
-      100% { transform: rotate(14deg) scaleY(1.04); }
-    }
-    @keyframes finStroke {
-      0% { transform: rotate(18deg); }
-      100% { transform: rotate(-22deg); }
-    }
-    @keyframes finStrokeBack {
-      0% { transform: rotate(-10deg); }
-      100% { transform: rotate(18deg); }
-    }
-    @keyframes smokeTrail {
-      0% { opacity: 0; transform: translate(3px, 2px) scale(.55); }
-      18% { opacity: .55; }
-      100% { opacity: 0; transform: translate(-42px, 10px) scale(1.8); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #dolphin.swimming .body-group,
-      #dolphin.swimming .tail-group,
-      #dolphin.swimming .fin-front,
-      #dolphin.swimming .fin-back,
-      #dolphin.swimming .smoke-particle {
-        animation-duration: 1.5s;
-      }
-    }
-  </style>
+  @media (prefers-reduced-motion: reduce) {
+    #dolphin.swimming { animation: none; }
+  }
+</style>
 </head>
 <body>
-  <div id="stage" aria-hidden="true">
-    <div id="dolphin">
-      <svg viewBox="0 0 210 150" aria-label="煙霧狀海豚護法">
-        <defs>
-          <linearGradient id="patronusGradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#f6feff"/>
-            <stop offset=".45" stop-color="#bcefff"/>
-            <stop offset="1" stop-color="#66c7ed"/>
-          </linearGradient>
-          <filter id="smokeBlur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8"/>
-          </filter>
-          <filter id="smallBlur" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="3"/>
-          </filter>
-        </defs>
+<div id="stage">
+  <img id="dolphin" src="dolphin.png" alt="">
+</div>
 
-        <!-- Soft smoky halo -->
-        <path class="mist" d="M25 72 C38 42 74 31 111 41 C132 47 145 58 163 56 C176 54 187 45 199 35 C194 58 180 73 161 79 C143 85 128 78 113 75 C96 72 87 84 71 96 C56 107 40 105 29 96 C43 87 49 78 49 72 C40 75 31 75 25 72Z"/>
+<script>
+(() => {
+  const stage = document.getElementById("stage");
+  const dolphin = document.getElementById("dolphin");
 
-        <g class="body-group">
-          <!-- recognizable dolphin body: forehead + long beak + curved back -->
-          <path class="dolphin-main" d="
-            M22 73
-            C31 52 48 42 69 39
-            C77 28 88 22 100 25
-            C113 28 121 38 127 49
-            C137 54 148 58 160 57
-            C174 56 187 48 199 37
-            C195 53 186 67 172 75
-            C157 84 142 83 128 78
-            C116 74 108 76 99 83
-            C88 92 76 104 61 107
-            C48 110 37 104 29 97
-            C43 88 49 80 49 72
-            C39 76 30 76 22 73Z"/>
+  let running = false;
+  let raf = 0;
 
-          <!-- belly light / characteristic dolphin curve -->
-          <path fill="#8edbf1" opacity=".65" d="
-            M49 72 C65 68 83 64 102 69
-            C115 72 125 80 138 82
-            C122 86 110 80 99 83
-            C86 91 76 102 61 107
-            C48 110 37 104 29 97
-            C43 88 49 80 49 72Z"/>
+  // The artwork itself points roughly toward the upper-right.
+  const ART_BASE_ANGLE = -35 * Math.PI / 180;
 
-          <!-- dorsal fin -->
-          <path class="fin fin-front" d="M86 43 C81 27 83 16 91 8 C101 21 103 33 98 46Z"/>
+  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
-          <!-- near pectoral fin -->
-          <path class="fin fin-front" d="M116 65 C127 71 136 83 133 96 C121 90 114 82 110 71Z"/>
+  function layout() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-          <!-- far pectoral fin -->
-          <path class="fin fin-back" opacity=".55" d="M99 65 C90 73 84 84 87 94 C97 87 102 79 104 69Z"/>
+    // Keep the entire dolphin safely inside the viewport during
+    // the circular section. The final exit is done separately.
+    const imgW = clamp(w * 0.31, 280, 430);
+    const imgH = imgW * (490 / 580);
 
-          <!-- eye and small smile -->
-          <circle class="eye" cx="105" cy="42" r="2.8"/>
-          <circle fill="#fff" cx="106" cy="41" r=".8"/>
-          <path d="M116 50 Q123 53 128 49" fill="none" stroke="#75c5df" stroke-width="1.5" stroke-linecap="round"/>
-        </g>
+    const rx = Math.max(80, w / 2 - imgW * 0.62);
+    const ry = Math.max(70, h / 2 - imgH * 0.62);
 
-        <!-- Tail is separated so it can beat independently -->
-        <g class="tail-group">
-          <path class="dolphin-main" d="M49 72 C36 63 25 54 19 43 C11 50 8 59 12 67 C22 68 31 71 43 78Z"/>
-          <path class="dolphin-main" d="M45 78 C32 82 21 91 18 102 C29 103 40 98 51 87Z"/>
-        </g>
+    return {
+      w, h, imgW, imgH,
+      cx: w / 2,
+      cy: h / 2,
+      rx, ry
+    };
+  }
 
-        <!-- drifting magical smoke -->
-        <circle class="smoke-particle p1" cx="27" cy="80" r="7"/>
-        <circle class="smoke-particle p2" cx="20" cy="91" r="5"/>
-        <circle class="smoke-particle p3" cx="32" cy="101" r="4"/>
-        <circle class="smoke-particle p4" cx="15" cy="74" r="3"/>
-      </svg>
-    </div>
-  </div>
+  function renderOrbit(theta, t, L) {
+    // Counter-clockwise orbit. The dolphin starts at lower-right,
+    // stays inside the screen for the entire orbit, and returns
+    // to that same point after one complete revolution.
+    const x = L.cx + L.rx * Math.cos(theta);
+    const y = L.cy + L.ry * Math.sin(theta);
 
-  <script>
-    (() => {
-      const dolphin = document.getElementById('dolphin');
-      let running = false;
-      let animationFrame = 0;
+    // Tangent of the counter-clockwise path.
+    const tx = -L.rx * Math.sin(theta);
+    const ty =  L.ry * Math.cos(theta);
+    const tangentAngle = Math.atan2(-ty, -tx);
 
-      // A continuous rounded path around the viewport. The dolphin's heading
-      // follows the path tangent, so it turns naturally instead of teleporting
-      // between fixed points.
-      function buildPath() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const margin = Math.min(90, Math.max(55, Math.min(w, h) * .08));
+    // Small body undulation: a living-swim feel while the path remains smooth.
+    const bodyRoll = Math.sin(t * 0.014) * 0.055;
+    const bodyPitch = Math.sin(t * 0.019 + 1.2) * 0.018;
+    const scale = 1 + Math.sin(t * 0.017) * 0.018;
 
-        return [
-          { x: w + 80, y: h - margin,   wait: 0 },       // entry: right-bottom
-          { x: w - margin, y: h - margin, wait: 0 },
-          { x: w - margin, y: margin,     wait: 0 },
-          { x: margin,     y: margin,     wait: 0 },
-          { x: margin,     y: h - margin, wait: 0 },
-          { x: w - margin, y: h - margin, wait: 0 },
-          { x: w * .20,    y: margin,     wait: 0 },
-          { x: -100,       y: -90,        wait: 0 }        // exit: upper-left
-        ];
-      }
+    const angle = tangentAngle - ART_BASE_ANGLE + bodyRoll;
 
-      function catmullRom(points, samplesPerSegment = 34) {
-        const out = [];
-        for (let i = 0; i < points.length - 1; i++) {
-          const p0 = points[Math.max(0, i - 1)];
-          const p1 = points[i];
-          const p2 = points[i + 1];
-          const p3 = points[Math.min(points.length - 1, i + 2)];
+    dolphin.style.width = `${L.imgW}px`;
+    dolphin.style.transform =
+      `translate3d(${x - L.imgW / 2}px, ${y - L.imgH / 2}px, 0) ` +
+      `rotate(${angle}rad) scale(${scale + bodyPitch})`;
+  }
 
-          for (let s = 0; s < samplesPerSegment; s++) {
-            const t = s / samplesPerSegment;
-            const t2 = t * t;
-            const t3 = t2 * t;
-            const x = .5 * (
-              2*p1.x +
-              (-p0.x + p2.x)*t +
-              (2*p0.x - 5*p1.x + 4*p2.x - p3.x)*t2 +
-              (-p0.x + 3*p1.x - 3*p2.x + p3.x)*t3
-            );
-            const y = .5 * (
-              2*p1.y +
-              (-p0.y + p2.y)*t +
-              (2*p0.y - 5*p1.y + 4*p2.y - p3.y)*t2 +
-              (-p0.y + 3*p1.y - 3*p2.y + p3.y)*t3
-            );
-            out.push({x, y});
-          }
-        }
-        out.push(points[points.length - 1]);
-        return out;
-      }
+  function exitTopLeft(L, startX, startY) {
+    return new Promise(resolve => {
+      const duration = 1250;
+      const begin = performance.now();
 
-      function setTransform(x, y, angle, bob) {
+      function frame(now) {
+        const p = Math.min(1, (now - begin) / duration);
+        const e = 1 - Math.pow(1 - p, 3);
+
+        // Only AFTER the complete orbit do we leave the screen.
+        const x = startX + (-L.imgW * 1.2 - startX) * e;
+        const y = startY + (-L.imgH * 1.2 - startY) * e;
+
+        // Continue swimming toward the upper-left.
+        const angle = -2.55 + Math.sin(p * Math.PI * 3) * 0.035;
         dolphin.style.transform =
-          `translate3d(${x}px, ${y + bob}px, 0) rotate(${angle}deg)`;
-      }
+          `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${1 + 0.015 * Math.sin(p * Math.PI * 5)})`;
 
-      function stopAnimation() {
-        if (animationFrame) cancelAnimationFrame(animationFrame);
-        animationFrame = 0;
-      }
-
-      function summon() {
-        if (running) return;
-        running = true;
-        stopAnimation();
-
-        const path = catmullRom(buildPath(), 42);
-        const start = path[0];
-        dolphin.style.opacity = '1';
-        dolphin.classList.add('swimming');
-
-        // Roughly constant swimming speed: each path segment is traversed
-        // according to its geometric length rather than fixed teleport times.
-        let totalLength = 0;
-        const lengths = [];
-        for (let i = 1; i < path.length; i++) {
-          const dx = path[i].x - path[i-1].x;
-          const dy = path[i].y - path[i-1].y;
-          const len = Math.hypot(dx, dy);
-          lengths.push(len);
-          totalLength += len;
+        if (p < 1) {
+          raf = requestAnimationFrame(frame);
+        } else {
+          resolve();
         }
-
-        const duration = Math.max(5200, totalLength / 0.72);
-        const startTime = performance.now();
-
-        function frame(now) {
-          const elapsed = now - startTime;
-          const progress = Math.min(1, elapsed / duration);
-          const targetDistance = progress * totalLength;
-
-          let walked = 0;
-          let idx = 1;
-          while (idx < path.length && walked + lengths[idx - 1] < targetDistance) {
-            walked += lengths[idx - 1];
-            idx++;
-          }
-
-          if (idx >= path.length) idx = path.length - 1;
-
-          const segLen = lengths[idx - 1] || 1;
-          const local = Math.max(0, Math.min(1, (targetDistance - walked) / segLen));
-          const a = path[idx - 1];
-          const b = path[idx];
-          const x = a.x + (b.x - a.x) * local;
-          const y = a.y + (b.y - a.y) * local;
-
-          // Tangent heading + a tiny natural body bob.
-          const angle = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
-          const bob = Math.sin(elapsed / 105) * 2.5;
-          setTransform(x, y, angle, bob);
-
-          if (progress < 1) {
-            animationFrame = requestAnimationFrame(frame);
-          } else {
-            dolphin.style.opacity = '0';
-            dolphin.classList.remove('swimming');
-            running = false;
-            animationFrame = 0;
-          }
-        }
-
-        animationFrame = requestAnimationFrame(frame);
       }
+      raf = requestAnimationFrame(frame);
+    });
+  }
 
-      // One tap/click anywhere on the black screen summons the Patronus.
-      document.addEventListener('pointerdown', summon, { passive: true });
+  async function summon() {
+    if (running) return;
+    running = true;
 
-      window.addEventListener('resize', () => {
-        if (running) {
-          // Current animation continues smoothly; resize affects only future summons.
+    const L = layout();
+    dolphin.classList.add("visible", "swimming");
+
+    // 45° = lower-right. The dolphin begins here.
+    const startTheta = Math.PI / 4;
+    const orbitDuration = 7200;
+    const begin = performance.now();
+
+    await new Promise(resolve => {
+      function orbit(now) {
+        const elapsed = now - begin;
+        const p = Math.min(1, elapsed / orbitDuration);
+
+        // Exactly one full revolution, smooth and continuous.
+        const theta = startTheta - p * Math.PI * 2;
+        renderOrbit(theta, elapsed, L);
+
+        if (p < 1) {
+          raf = requestAnimationFrame(orbit);
+        } else {
+          resolve();
         }
-      });
-    })();
-  </script>
+      }
+      raf = requestAnimationFrame(orbit);
+    });
+
+    // The orbit is now complete and the dolphin is still fully inside
+    // the screen. Only now does it swim out through the upper-left.
+    const endTheta = startTheta - Math.PI * 2;
+    const x = L.cx + L.rx * Math.cos(endTheta) - L.imgW / 2;
+    const y = L.cy + L.ry * Math.sin(endTheta) - L.imgH / 2;
+
+    await exitTopLeft(L, x, y);
+
+    dolphin.classList.remove("visible", "swimming");
+    dolphin.style.transform = "translate3d(-1000px,-1000px,0)";
+    running = false;
+  }
+
+  stage.addEventListener("pointerdown", () => {
+    summon();
+  }, { passive: true });
+
+  window.addEventListener("resize", () => {
+    // A running animation keeps its current frame; new summons use
+    // the latest viewport dimensions.
+    if (!running) {
+      dolphin.style.transform = "translate3d(-1000px,-1000px,0)";
+    }
+  });
+})();
+</script>
 </body>
 </html>

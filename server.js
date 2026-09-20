@@ -9,7 +9,7 @@ const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
-  ".svg": "image/svg+xml"
+  ".png": "image/png"
 };
 
 const server = http.createServer((req, res) => {
@@ -17,6 +17,7 @@ const server = http.createServer((req, res) => {
   if (urlPath === "/") urlPath = "/index.html";
 
   const filePath = path.join(root, urlPath);
+
   if (!filePath.startsWith(root)) {
     res.writeHead(403);
     return res.end("Forbidden");
@@ -27,6 +28,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(404, {"Content-Type": "text/plain; charset=utf-8"});
       return res.end("Not Found");
     }
+
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       "Content-Type": mime[ext] || "application/octet-stream",
