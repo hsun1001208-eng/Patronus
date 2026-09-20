@@ -41,211 +41,194 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Dynamic Mist / Particle Particles
-        const particles = [];
+        // Smoke Wisps Trail Class (Continuous Smoky Clouds, Not Dots!)
+        const smokePuffs = [];
 
-        class PatronusParticle {
-            constructor(x, y, vx, vy, size, maxLife, colorType) {
+        class SmokePuff {
+            constructor(x, y, vx, vy, rx, ry, angle, maxLife) {
                 this.x = x;
                 this.y = y;
                 this.vx = vx;
                 this.vy = vy;
-                this.size = size;
+                this.rx = rx;
+                this.ry = ry;
+                this.angle = angle;
                 this.life = maxLife;
                 this.maxLife = maxLife;
-                this.colorType = colorType; // 'core', 'mist', 'trail'
-                this.angle = Math.random() * Math.PI * 2;
-                this.vRot = (Math.random() - 0.5) * 0.08;
+                this.vRot = (Math.random() - 0.5) * 0.04;
             }
 
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.95;
-                this.vy *= 0.95;
-                this.size += 0.35;
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+                this.rx += 0.5;
+                this.ry += 0.4;
                 this.angle += this.vRot;
                 this.life--;
             }
 
             draw(ctx) {
                 if (this.life <= 0) return;
-                const progress = this.life / this.maxLife;
-                // Soft Gaussian-like alpha curve (fade in then fade out smoothly)
-                const alpha = Math.sin(progress * Math.PI);
+                const alpha = Math.sin((this.life / this.maxLife) * Math.PI);
 
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-                if (this.colorType === 'core') {
-                    grad.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.85})`);
-                    grad.addColorStop(0.3, `rgba(215, 245, 255, ${alpha * 0.5})`);
-                    grad.addColorStop(0.7, `rgba(100, 200, 255, ${alpha * 0.18})`);
-                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                } else if (this.colorType === 'mist') {
-                    grad.addColorStop(0, `rgba(235, 250, 255, ${alpha * 0.45})`);
-                    grad.addColorStop(0.4, `rgba(120, 210, 255, ${alpha * 0.22})`);
-                    grad.addColorStop(0.8, `rgba(30, 130, 230, ${alpha * 0.06})`);
-                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                } else { // trail
-                    grad.addColorStop(0, `rgba(200, 240, 255, ${alpha * 0.35})`);
-                    grad.addColorStop(0.5, `rgba(60, 160, 240, ${alpha * 0.15})`);
-                    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                }
+                // Organic Cloud Puff Path
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.rx);
+                grad.addColorStop(0, `rgba(220, 245, 255, ${alpha * 0.35})`);
+                grad.addColorStop(0.4, `rgba(100, 200, 255, ${alpha * 0.18})`);
+                grad.addColorStop(0.8, `rgba(30, 110, 220, ${alpha * 0.05})`);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.ellipse(0, 0, this.size, this.size * 0.55, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, this.rx, this.ry, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
         }
 
-        // Spine deformation for Swimming Animation
+        // Spine deformation for Swimming Wave
         function getSpineY(x, time) {
-            const swimFreq = 14.0;
+            const swimFreq = 13.0;
             const norm = (140 - x) / 280;
             if (norm < 0.2) return Math.sin(norm * Math.PI) * 1.5;
             const flexFactor = Math.pow((norm - 0.2) / 0.8, 1.85);
             return Math.sin(time * swimFreq - norm * 3.6) * 32 * flexFactor;
         }
 
-        // Real Movie Style: Ethereal Luminous Vaporous Dolphin
-        function drawEtherealPatronus(ctx, time, pos) {
+        // Draw Complete Seamless Dolphin Shape
+        function drawDolphinMesh(ctx, time, isCore = false) {
+            ctx.beginPath();
+
+            const snoutY = getSpineY(140, time);
+            ctx.moveTo(140, snoutY);
+
+            // Beak to Melon (圓潤額頭)
+            ctx.quadraticCurveTo(125, getSpineY(125, time) - 2, 115, getSpineY(115, time) - 6);
+            ctx.quadraticCurveTo(90, getSpineY(90, time) - 28, 50, getSpineY(50, time) - 30);
+
+            // Back to Dorsal Fin (彎曲背鰭)
+            const dBaseY = getSpineY(10, time);
+            ctx.lineTo(15, dBaseY - 28);
+            ctx.quadraticCurveTo(-5, dBaseY - 62, -22, dBaseY - 65);
+            ctx.quadraticCurveTo(-15, dBaseY - 40, -18, dBaseY - 24);
+
+            // Back to Tail Peduncle
+            ctx.quadraticCurveTo(-60, getSpineY(-60, time) - 16, -110, getSpineY(-110, time) - 6);
+
+            // Tail Fluke (雙葉尾鰭)
+            const tailY = getSpineY(-135, time);
+            ctx.lineTo(-130, tailY - 32);
+            ctx.quadraticCurveTo(-138, tailY - 16, -132, tailY);
+            ctx.quadraticCurveTo(-138, tailY + 16, -130, tailY + 32);
+
+            // Lower Peduncle to Belly
+            ctx.lineTo(-110, getSpineY(-110, time) + 6);
+            ctx.quadraticCurveTo(-60, getSpineY(-60, time) + 16, -20, getSpineY(-20, time) + 22);
+
+            // Pectoral Flipper (優雅胸鰭)
+            const pBaseY = getSpineY(25, time);
+            ctx.lineTo(20, pBaseY + 22);
+            ctx.quadraticCurveTo(-2, pBaseY + 54, -22, pBaseY + 58);
+            ctx.quadraticCurveTo(-10, pBaseY + 36, 35, pBaseY + 18);
+
+            // Chin to Snout
+            ctx.quadraticCurveTo(80, getSpineY(80, time) + 12, 115, getSpineY(115, time) + 4);
+            ctx.lineTo(140, snoutY);
+            ctx.closePath();
+        }
+
+        function drawSmokyPatronus(ctx, time, pos) {
             ctx.save();
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
             ctx.globalCompositeOperation = 'lighter';
 
-            // Key Dolphin Anatomy Skeleton Nodes for Vaporous Cloud Generation
-            // Head (Snout/Melon), Body, Dorsal Fin, Pectoral Fins, Tail Peduncle, Fluke
-            const bodyNodes = [
-                { x: 135, r: 10,  weight: 0.9 }, // Snout
-                { x: 110, r: 24,  weight: 1.0 }, // Melon/Head
-                { x: 80,  r: 35,  weight: 1.0 }, // Neck/Shoulder
-                { x: 45,  r: 40,  weight: 1.0 }, // Mid Body
-                { x: 10,  r: 36,  weight: 0.95 },// Lower Body
-                { x: -25, r: 28,  weight: 0.85 },// Rear
-                { x: -60, r: 20,  weight: 0.75 },// Peduncle Top
-                { x: -90, r: 14,  weight: 0.65 },// Peduncle Mid
-                { x: -115, r: 9,  weight: 0.5 }  // Tail Base
-            ];
+            // --- Pass 1: Heavy Outer Vaporous Fog (濃郁擴散光霧) ---
+            ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(18px)';
+            
+            drawDolphinMesh(ctx, time);
+            const outerGrad = ctx.createLinearGradient(140, 0, -135, 0);
+            outerGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+            outerGrad.addColorStop(0.3, 'rgba(180, 230, 255, 0.5)');
+            outerGrad.addColorStop(0.7, 'rgba(50, 160, 245, 0.3)');
+            outerGrad.addColorStop(1, 'rgba(5, 80, 200, 0.1)');
+            ctx.fillStyle = outerGrad;
+            ctx.fill();
+            ctx.restore();
 
-            // 1. Core Soft Volumetric Mist (Creating the organic body volume WITHOUT outlines)
-            bodyNodes.forEach((node, idx) => {
-                const py = getSpineY(node.x, time);
-                const pulse = Math.sin(time * 8 + idx) * 3;
-                const radius = node.r + pulse;
+            // --- Pass 2: Mid-Layer Soft Smoke Body (中層煙霧形體) ---
+            ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(8px)';
 
-                // Deep Outer Ethereal Aura
-                const outerGlow = ctx.createRadialGradient(node.x, py, 0, node.x, py, radius * 2.2);
-                outerGlow.addColorStop(0, 'rgba(180, 235, 255, 0.35)');
-                outerGlow.addColorStop(0.4, 'rgba(50, 160, 240, 0.18)');
-                outerGlow.addColorStop(0.8, 'rgba(10, 80, 180, 0.05)');
-                outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = outerGlow;
-                ctx.beginPath();
-                ctx.arc(node.x, py, radius * 2.2, 0, Math.PI * 2);
-                ctx.fill();
+            drawDolphinMesh(ctx, time);
+            const midGrad = ctx.createLinearGradient(140, 0, -135, 0);
+            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+            midGrad.addColorStop(0.35, 'rgba(215, 245, 255, 0.65)');
+            midGrad.addColorStop(0.75, 'rgba(100, 205, 255, 0.35)');
+            midGrad.addColorStop(1, 'rgba(14, 130, 230, 0.15)');
+            ctx.fillStyle = midGrad;
+            ctx.fill();
+            ctx.restore();
 
-                // Intense Bright Silver Core
-                const coreGlow = ctx.createRadialGradient(node.x, py, 0, node.x, py, radius);
-                coreGlow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-                coreGlow.addColorStop(0.3, 'rgba(220, 245, 255, 0.7)');
-                coreGlow.addColorStop(0.65, 'rgba(100, 205, 255, 0.3)');
-                coreGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = coreGlow;
-                ctx.beginPath();
-                ctx.arc(node.x, py, radius, 0, Math.PI * 2);
-                ctx.fill();
-            });
+            // --- Pass 3: Core Luminous Spirit Density (核心銀白靈氣) ---
+            ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(3px)';
 
-            // 2. Anatomical Fins made of Light Streaks
-            // Dorsal Fin (背鰭)
-            const dY = getSpineY(10, time);
-            for (let f = 0; f < 5; f++) {
-                const fx = 12 - f * 6;
-                const fy = dY - 15 - f * 9;
-                const fRad = 18 - f * 2.5;
-                const fGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, fRad * 1.5);
-                fGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
-                fGrad.addColorStop(0.5, 'rgba(120, 215, 255, 0.3)');
-                fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = fGrad;
-                ctx.beginPath();
-                ctx.arc(fx, fy, fRad * 1.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            drawDolphinMesh(ctx, time);
+            const coreGrad = ctx.createLinearGradient(140, 0, -135, 0);
+            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            coreGrad.addColorStop(0.25, 'rgba(240, 250, 255, 0.8)');
+            coreGrad.addColorStop(0.6, 'rgba(160, 225, 255, 0.45)');
+            coreGrad.addColorStop(1, 'rgba(50, 170, 240, 0.1)');
+            ctx.fillStyle = coreGrad;
+            ctx.fill();
+            ctx.restore();
 
-            // Pectoral Fins (胸鰭)
-            const pY = getSpineY(35, time);
-            for (let f = 0; f < 5; f++) {
-                const fx = 25 - f * 8;
-                const fy = pY + 12 + f * 7;
-                const fRad = 16 - f * 2;
-                const fGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, fRad * 1.5);
-                fGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
-                fGrad.addColorStop(0.5, 'rgba(120, 215, 255, 0.3)');
-                fGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = fGrad;
-                ctx.beginPath();
-                ctx.arc(fx, fy, fRad * 1.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Tail Flukes (雙葉尾鰭)
-            const tailY = getSpineY(-125, time);
-            [-22, -11, 0, 11, 22].forEach(offsetY => {
-                const tx = -130 - Math.abs(offsetY) * 0.4;
-                const ty = tailY + offsetY;
-                const tRad = 16;
-                const tGrad = ctx.createRadialGradient(tx, ty, 0, tx, ty, tRad * 1.4);
-                tGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-                tGrad.addColorStop(0.4, 'rgba(140, 220, 255, 0.35)');
-                tGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                ctx.fillStyle = tGrad;
-                ctx.beginPath();
-                ctx.arc(tx, ty, tRad * 1.4, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // 3. Dynamic Swirling Energy Smoke Generation (靈氣粒子)
+            // --- Pass 4: Continuous Swirling Smoky Tendrils / Trails (後方拖尾蒸氣煙霧) ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
 
-            // Emit Tail Mist Trails (尾跡巨浪煙霧)
-            for (let k = 0; k < 6; k++) {
-                const tWy = tailY + (Math.random() - 0.5) * 30;
+            // Tail Fluke Smoke Release
+            const tailY = getSpineY(-135, time);
+            for (let k = 0; k < 5; k++) {
+                const tWy = tailY + (Math.random() - 0.5) * 24;
                 const wx = pos.x + (-130 * cos - tWy * sin);
                 const wy = pos.y + (-130 * sin + tWy * cos);
-                particles.push(new PatronusParticle(
+
+                smokePuffs.push(new SmokePuff(
                     wx, wy,
-                    -cos * (Math.random() * 6 + 4) + (Math.random() - 0.5) * 3,
-                    -sin * (Math.random() * 6 + 4) + (Math.random() - 0.5) * 3,
-                    Math.random() * 28 + 18,
-                    Math.random() * 40 + 30,
-                    'trail'
+                    -cos * (Math.random() * 5 + 3) + (Math.random() - 0.5) * 2,
+                    -sin * (Math.random() * 5 + 3) + (Math.random() - 0.5) * 2,
+                    Math.random() * 25 + 18,
+                    Math.random() * 20 + 12,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * 35 + 25
                 ));
             }
 
-            // Emit Body Surface Ethereal Wisps (身體邊緣飄逸的煙霧流)
-            for (let b = 0; b < 3; b++) {
-                const randNode = bodyNodes[Math.floor(Math.random() * bodyNodes.length)];
-                const py = getSpineY(randNode.x, time) + (Math.random() - 0.5) * randNode.r * 1.2;
-                const px = randNode.x + (Math.random() - 0.5) * 15;
-                const wx = pos.x + (px * cos - py * sin);
-                const wy = pos.y + (px * sin + py * cos);
+            // Dorsal & Pectoral Smoke Release
+            if (Math.random() < 0.7) {
+                const bodyX = (Math.random() - 0.5) * 200;
+                const bodyY = getSpineY(bodyX, time) + (Math.random() - 0.5) * 20;
+                const wx = pos.x + (bodyX * cos - bodyY * sin);
+                const wy = pos.y + (bodyX * sin + bodyY * cos);
 
-                particles.push(new PatronusParticle(
+                smokePuffs.push(new SmokePuff(
                     wx, wy,
-                    -cos * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 2,
-                    -sin * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 2,
-                    Math.random() * 22 + 12,
-                    Math.random() * 30 + 20,
-                    'mist'
+                    -cos * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 1.5,
+                    -sin * (Math.random() * 2 + 1) + (Math.random() - 0.5) * 1.5,
+                    Math.random() * 20 + 12,
+                    Math.random() * 15 + 10,
+                    Math.random() * Math.PI * 2,
+                    Math.random() * 25 + 15
                 ));
             }
 
@@ -298,20 +281,22 @@
 
                 if (animProgress <= 1.0) {
                     const pos = getPathPos(animProgress);
-                    drawEtherealPatronus(ctx, time, pos);
+                    drawSmokyPatronus(ctx, time, pos);
                 } else {
                     isAnimating = false;
                 }
             }
 
-            // Render all ambient particles & mist trails with lighter blend mode
+            // Render all ambient smoke trail clouds with high Gaussian blur for a real vaporous look
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw(ctx);
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
+            if (ctx.filter !== undefined) ctx.filter = 'blur(10px)';
+
+            for (let i = smokePuffs.length - 1; i >= 0; i--) {
+                smokePuffs[i].update();
+                smokePuffs[i].draw(ctx);
+                if (smokePuffs[i].life <= 0) {
+                    smokePuffs.splice(i, 1);
                 }
             }
             ctx.restore();
