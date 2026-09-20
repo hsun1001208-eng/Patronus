@@ -42,7 +42,7 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Smoke Wisps Trail Class
+        // Delicate Smoke Wisps Class
         const smokePuffs = [];
 
         class SmokePuff {
@@ -56,16 +56,16 @@
                 this.angle = angle;
                 this.life = maxLife;
                 this.maxLife = maxLife;
-                this.vRot = (Math.random() - 0.5) * 0.04;
+                this.vRot = (Math.random() - 0.5) * 0.03;
             }
 
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.96;
-                this.vy *= 0.96;
-                this.rx += 0.8;
-                this.ry += 0.7;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+                this.rx += 0.5;
+                this.ry += 0.4;
                 this.angle += this.vRot;
                 this.life--;
             }
@@ -78,10 +78,11 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
+                // Reduced opacity drastically for subtle, elegant ether mist
                 const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.rx);
-                grad.addColorStop(0, `rgba(210, 245, 255, ${alpha * 0.22})`);
-                grad.addColorStop(0.4, `rgba(100, 200, 255, ${alpha * 0.12})`);
-                grad.addColorStop(0.8, `rgba(30, 110, 220, ${alpha * 0.03})`);
+                grad.addColorStop(0, `rgba(200, 240, 255, ${alpha * 0.10})`);
+                grad.addColorStop(0.4, `rgba(90, 190, 255, ${alpha * 0.05})`);
+                grad.addColorStop(0.8, `rgba(20, 100, 210, ${alpha * 0.015})`);
                 grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
                 ctx.fillStyle = grad;
@@ -151,7 +152,6 @@
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
-            // Responsive scale factor for dolphin (shrink slightly on narrow mobile screens)
             const minDim = Math.min(width, height);
             const dolphinScale = minDim < 600 ? 0.75 : 1.0;
 
@@ -161,14 +161,14 @@
             ctx.save();
             if (ctx.filter !== undefined) ctx.filter = 'blur(68px)';
             ctx.shadowColor = '#60d0ff';
-            ctx.shadowBlur = 50;
+            ctx.shadowBlur = 45;
             
             drawDolphinMesh(ctx, time, dolphinScale);
             const outerGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.50)');
-            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.30)');
-            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.15)');
-            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.03)');
+            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.45)');
+            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.25)');
+            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.12)');
+            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.02)');
             ctx.fillStyle = outerGrad;
             ctx.fill();
             ctx.restore();
@@ -179,10 +179,10 @@
 
             drawDolphinMesh(ctx, time, dolphinScale);
             const transitionGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.48)');
-            transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.32)');
-            transitionGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.16)');
-            transitionGrad.addColorStop(1, 'rgba(10, 80, 200, 0.04)');
+            transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+            transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.28)');
+            transitionGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.12)');
+            transitionGrad.addColorStop(1, 'rgba(10, 80, 200, 0.03)');
             ctx.fillStyle = transitionGrad;
             ctx.fill();
             ctx.restore();
@@ -193,10 +193,10 @@
 
             drawDolphinMesh(ctx, time, dolphinScale);
             const midGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.35)');
-            midGrad.addColorStop(0.75, 'rgba(60, 170, 250, 0.18)');
-            midGrad.addColorStop(1, 'rgba(10, 90, 210, 0.05)');
+            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.52)');
+            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.30)');
+            midGrad.addColorStop(0.75, 'rgba(60, 170, 250, 0.14)');
+            midGrad.addColorStop(1, 'rgba(10, 90, 210, 0.04)');
             ctx.fillStyle = midGrad;
             ctx.fill();
             ctx.restore();
@@ -207,60 +207,34 @@
 
             drawDolphinMesh(ctx, time, dolphinScale);
             const coreGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.58)');
-            coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.35)');
-            coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.16)');
-            coreGrad.addColorStop(1, 'rgba(20, 120, 220, 0.03)');
+            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+            coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.32)');
+            coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.14)');
+            coreGrad.addColorStop(1, 'rgba(20, 120, 220, 0.02)');
             ctx.fillStyle = coreGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 5: 身體週邊附著飄散靈氣雲霧 ---
+            // --- Pass 5: 輕微薄霧靈氣 (Subtle Light Smoke Emission) ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
 
-            const keyPoints = [
-                { x: 180 * dolphinScale, y: getSpineY(180, time) * dolphinScale },
-                { x: 50 * dolphinScale, y: (getSpineY(50, time) + 35) * dolphinScale },
-                { x: 20 * dolphinScale, y: (getSpineY(20, time) - 40) * dolphinScale },
-                { x: -100 * dolphinScale, y: getSpineY(-100, time) * dolphinScale },
-                { x: -175 * dolphinScale, y: getSpineY(-175, time) * dolphinScale }
-            ];
-
-            for (let pt of keyPoints) {
-                if (Math.random() < 0.6) {
-                    const localX = pt.x + (Math.random() - 0.5) * 30 * dolphinScale;
-                    const localY = pt.y + (Math.random() - 0.5) * 30 * dolphinScale;
-                    const wx = pos.x + (localX * cos - localY * sin);
-                    const wy = pos.y + (localX * sin + localY * cos);
-
-                    smokePuffs.push(new SmokePuff(
-                        wx, wy,
-                        -cos * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
-                        -sin * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
-                        (Math.random() * 38 + 28) * dolphinScale,
-                        (Math.random() * 30 + 20) * dolphinScale,
-                        Math.random() * Math.PI * 2,
-                        Math.random() * 35 + 25
-                    ));
-                }
-            }
-
-            // --- Pass 6: 尾部主要流體蒸氣 ---
-            const tailY = getSpineY(-178, time) * dolphinScale;
-            for (let k = 0; k < 5; k++) {
-                const tWy = tailY + (Math.random() - 0.5) * 30 * dolphinScale;
-                const wx = pos.x + (-170 * dolphinScale * cos - tWy * sin);
-                const wy = pos.y + (-170 * dolphinScale * sin + tWy * cos);
+            // Emission frequency & count significantly lowered for elegance
+            if (Math.random() < 0.35) {
+                const pt = { x: -175 * dolphinScale, y: getSpineY(-178, time) * dolphinScale };
+                const localX = pt.x + (Math.random() - 0.5) * 20 * dolphinScale;
+                const localY = pt.y + (Math.random() - 0.5) * 20 * dolphinScale;
+                const wx = pos.x + (localX * cos - localY * sin);
+                const wy = pos.y + (localX * sin + localY * cos);
 
                 smokePuffs.push(new SmokePuff(
                     wx, wy,
-                    -cos * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    -sin * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    (Math.random() * 38 + 25) * dolphinScale,
-                    (Math.random() * 30 + 18) * dolphinScale,
+                    -cos * (Math.random() * 2 + 1.2) + (Math.random() - 0.5) * 1.5,
+                    -sin * (Math.random() * 2 + 1.2) + (Math.random() - 0.5) * 1.5,
+                    (Math.random() * 25 + 18) * dolphinScale,
+                    (Math.random() * 20 + 12) * dolphinScale,
                     Math.random() * Math.PI * 2,
-                    Math.random() * 38 + 28
+                    Math.random() * 28 + 20
                 ));
             }
 
@@ -282,28 +256,22 @@
         window.addEventListener('pointerdown', triggerPatronus);
         window.addEventListener('touchstart', triggerPatronus, { passive: true });
 
-        // PERFECT MOBILE & DESKTOP PATH CALCULATION
         function getPathPos(t) {
-            // Start well outside bottom-right, End well outside top-left
             const margin = Math.min(width, height) * 0.35 + 150;
             const startX = width + margin;
             const startY = height + margin;
             const endX = -margin;
             const endY = -margin;
 
-            // Straight line interpolated position
             const baseX = startX + (endX - startX) * t;
             const baseY = startY + (endY - startY) * t;
 
-            // Curved arc amount adapted dynamically to screen aspect ratio
-            // Prevents pushing off-screen on narrow vertical mobile screens
             const isPortrait = height > width;
             const curveFactor = isPortrait ? width * 0.15 : Math.min(width, height) * 0.22;
 
             const x = baseX + Math.sin(t * Math.PI) * curveFactor;
             const y = baseY - Math.sin(t * Math.PI) * (curveFactor * 0.7);
 
-            // Calculate tangent angle for smooth dolphin rotation along curve
             const dt = 0.005;
             const nextBaseX = startX + (endX - startX) * (t + dt);
             const nextBaseY = startY + (endY - startY) * (t + dt);
@@ -334,10 +302,10 @@
                 }
             }
 
-            // Render ambient smoke trail
+            // Render delicate ambient smoke trail
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            if (ctx.filter !== undefined) ctx.filter = 'blur(18px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(15px)';
 
             for (let i = smokePuffs.length - 1; i >= 0; i--) {
                 smokePuffs[i].update();
