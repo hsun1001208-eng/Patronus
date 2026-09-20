@@ -1,255 +1,370 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Patronus</title>
-<style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
-body{touch-action:manipulation}
-#stage{position:fixed;inset:0;overflow:hidden;background:#000}
-#dolphin{
-  position:absolute;width:260px;height:150px;left:0;top:0;
-  opacity:0;pointer-events:none;
-  transform-origin:50% 50%;
-  will-change:transform,opacity;
-  filter:drop-shadow(0 0 5px rgba(170,235,255,.95))
-         drop-shadow(0 0 20px rgba(70,175,255,.55));
-}
-svg{width:100%;height:100%;overflow:visible}
-#swim{transform-origin:150px 80px;animation:bodySwim .58s ease-in-out infinite}
-#tailGroup{transform-box:fill-box;transform-origin:15% 50%;animation:tailBeat .36s ease-in-out infinite alternate}
-#finNear{transform-box:fill-box;transform-origin:50% 0%;animation:finBeat .7s ease-in-out infinite alternate}
-#finFar{transform-box:fill-box;transform-origin:50% 100%;animation:finFarBeat .7s ease-in-out infinite alternate}
-#dorsal{transform-box:fill-box;transform-origin:50% 100%;animation:dorsalBeat .8s ease-in-out infinite alternate}
-@keyframes bodySwim{
-  0%,100%{transform:translateY(0) rotate(0deg)}
-  50%{transform:translateY(2px) rotate(-1.2deg)}
-}
-@keyframes tailBeat{
-  from{transform:rotate(-13deg)}
-  to{transform:rotate(13deg)}
-}
-@keyframes finBeat{
-  from{transform:rotate(-8deg)}
-  to{transform:rotate(11deg)}
-}
-@keyframes finFarBeat{
-  from{transform:rotate(7deg)}
-  to{transform:rotate(-8deg)}
-}
-@keyframes dorsalBeat{
-  from{transform:rotate(-3deg)}
-  to{transform:rotate(4deg)}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patronus Dolphin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background-color: #000000;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
 </head>
 <body>
-<div id="stage">
-  <div id="dolphin">
-    <svg viewBox="0 0 640 320" aria-hidden="true">
-      <defs>
-        <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#f2fdff" stop-opacity=".94"/>
-          <stop offset=".28" stop-color="#b8edff" stop-opacity=".86"/>
-          <stop offset=".66" stop-color="#69c7ed" stop-opacity=".58"/>
-          <stop offset="1" stop-color="#2d79b0" stop-opacity=".20"/>
-        </linearGradient>
-        <linearGradient id="fin" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#d8f8ff" stop-opacity=".78"/>
-          <stop offset="1" stop-color="#5aaee0" stop-opacity=".22"/>
-        </linearGradient>
-        <filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>
-      </defs>
+    <canvas id="webgl"></canvas>
 
-      <!-- Accurate bottlenose dolphin proportions: rounded melon + beak,
-           slender body, narrow peduncle, dorsal and pectoral fins, horizontal flukes. -->
-      <g id="swim">
-        <!-- far pectoral fin -->
-        <path id="finFar" d="M330 173 C302 207 274 231 236 244 C249 213 274 181 304 157Z"
-              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".42" stroke-width="2"/>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        <!-- torso and head/melon -->
-        <path d="M130 151
-                 C142 113 180 89 226 82
-                 C266 76 307 83 342 102
-                 C368 116 394 121 424 117
-                 C454 113 483 113 516 124
-                 C490 139 457 146 422 145
-                 C393 144 371 150 347 164
-                 C316 182 284 198 247 202
-                 C203 207 164 192 141 171
-                 C132 163 127 157 130 151Z"
-              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".88" stroke-width="2.5"/>
+    <script>
+        // --- Scene & Renderer Setup ---
+        const canvas = document.getElementById('webgl');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.015);
 
-        <!-- distinct rounded forehead/melon -->
-        <path d="M270 87 C300 76 336 85 357 105 C331 110 301 108 272 101Z"
-              fill="#effcff" fill-opacity=".25" filter="url(#soft)"/>
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 50);
 
-        <!-- beak/rostrum: long, narrow, unmistakably dolphin -->
-        <path d="M414 117 C451 105 500 109 551 126
-                 C526 139 478 143 428 139Z"
-              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".82" stroke-width="2.2"/>
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 1);
 
-        <!-- dorsal fin -->
-        <path id="dorsal" d="M247 82 C250 48 267 19 286 12
-                              C297 37 292 67 278 87Z"
-              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".68" stroke-width="2"/>
+        // --- Custom Shaders for Patronus Dolphin ---
+        const patronusVertexShader = `
+            uniform float uTime;
+            uniform float uSwimSpeed;
+            uniform float uFlexibility;
+            
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            varying vec3 vWorldPosition;
+            
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                
+                // Dolphin Swimming Undulation Effect (Sine Wave along Z axis)
+                vec3 pos = position;
+                float wave = sin(uTime * uSwimSpeed - pos.z * uFlexibility) * 1.2;
+                pos.x += wave * (pos.z < 0.0 ? 0.8 : 0.2); // Fluke/Tail moves more
+                
+                vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                vViewPosition = -mvPosition.xyz;
+                
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
 
-        <!-- near pectoral fin -->
-        <path id="finNear" d="M325 165 C345 199 373 226 408 236
-                               C395 202 379 170 351 148Z"
-              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".76" stroke-width="2"/>
+        const patronusFragmentShader = `
+            uniform float uTime;
+            uniform float uOpacity;
+            
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            varying vec3 vWorldPosition;
 
-        <!-- narrow tail peduncle -->
-        <path d="M145 151 C118 143 92 147 67 159
-                 C91 170 119 172 149 164Z"
-              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".72" stroke-width="2"/>
+            // Simple Perlin-like Noise function
+            float hash(float n) { return fract(sin(n) * 43758.5453123); }
+            float noise(vec3 x) {
+                vec3 p = floor(x);
+                vec3 f = fract(x);
+                f = f*f*(3.0-2.0*f);
+                float n = p.x + p.y*57.0 + 113.0*p.z;
+                return mix(mix(mix(hash(n+0.0), hash(n+1.0),f.x),
+                               mix(hash(n+57.0), hash(n+58.0),f.x),f.y),
+                           mix(mix(hash(n+113.0), hash(n+114.0),f.x),
+                               mix(hash(n+170.0), hash(n+171.0),f.x),f.y),f.z);
+            }
 
-        <!-- horizontal dolphin tail flukes -->
-        <g id="tailGroup">
-          <path d="M77 160 C51 146 20 141 3 149
-                   C18 166 46 171 76 167Z"
-                fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".75" stroke-width="2"/>
-          <path d="M77 164 C51 178 20 184 4 177
-                   C19 160 47 155 76 158Z"
-                fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".75" stroke-width="2"/>
-        </g>
+            void main() {
+                vec3 normal = normalize(vNormal);
+                vec3 viewDir = normalize(vViewPosition);
 
-        <!-- eye and small mouth line -->
-        <circle cx="437" cy="119" r="4.4" fill="#071923"/>
-        <circle cx="438.4" cy="117.5" r="1.35" fill="#fff"/>
-        <path d="M472 132 C494 133 514 130 531 126"
-              fill="none" stroke="#f3fdff" stroke-opacity=".45" stroke-width="2"/>
+                // Fresnel Effect (Glowing Outline)
+                float fresnel = pow(1.0 - abs(dot(normal, viewDir)), 2.5);
 
-        <!-- subtle smoky inner contour -->
-        <path d="M153 148 C201 111 267 104 329 122
-                 C360 131 389 133 421 127"
-              fill="none" stroke="#f5feff" stroke-opacity=".26" stroke-width="3"/>
-      </g>
-    </svg>
-  </div>
-</div>
+                // Wispy Smoke Noise Pattern
+                vec3 noiseCoords = vWorldPosition * 0.15 + vec3(0.0, uTime * 0.8, uTime * 0.5);
+                float n = noise(noiseCoords);
+                float smokeEffect = smoothstep(0.1, 0.9, n);
 
-<script>
-const stage=document.getElementById("stage");
-const dolphin=document.getElementById("dolphin");
-let running=false, raf=0;
+                // Harry Potter Silver-Blue Glow Colors
+                vec3 coreColor = vec3(0.4, 0.75, 1.0); // Bright magical blue
+                vec3 edgeColor = vec3(0.85, 0.95, 1.0); // Silver white
+                vec3 deepColor = vec3(0.1, 0.3, 0.7);  // Deep mystic blue
 
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+                vec3 finalColor = mix(coreColor, edgeColor, fresnel);
+                finalColor += deepColor * smokeEffect * 0.5;
+                finalColor += vec3(fresnel * 1.5); // Highlight edge glow
 
-function makeMist(x,y,angle){
-  for(let i=0;i<2;i++){
-    const p=document.createElement("span");
-    const s=8+Math.random()*20;
-    p.style.cssText=
-      "position:absolute;border-radius:50%;pointer-events:none;width:"+s+"px;height:"+s+
-      "px;left:"+(x-s/2)+"px;top:"+(y-s/2)+"px;"+
-      "background:radial-gradient(circle,rgba(170,235,255,.28),rgba(80,170,230,.07) 50%,transparent 75%);"+
-      "filter:blur(4px)";
-    stage.appendChild(p);
-    const born=performance.now(), life=800+Math.random()*650;
-    function drift(now){
-      const q=(now-born)/life;
-      if(q>=1){p.remove();return}
-      p.style.opacity=String(.55*(1-q));
-      p.style.transform=`translate(${-Math.cos(angle)*35*q}px,${-Math.sin(angle)*35*q}px) scale(${1+q*1.5})`;
-      requestAnimationFrame(drift);
-    }
-    requestAnimationFrame(drift);
-  }
-}
+                float alpha = (fresnel * 0.8 + smokeEffect * 0.4 + 0.2) * uOpacity;
+                
+                gl_FragColor = vec4(finalColor, clamp(alpha, 0.0, 1.0));
+            }
+        `;
 
-/*
-  The path is a large smooth oval.  The dolphin starts completely outside
-  the lower-right corner, enters the oval, makes one broad circuit, then
-  leaves toward the upper-left.  The whole circuit stays inside the viewport.
-*/
-function pathPoint(t){
-  const w=innerWidth,h=innerHeight;
-  const mx=Math.max(115,Math.min(165,w*.13));
-  const my=Math.max(90,Math.min(125,h*.13));
-  const left=mx, right=w-mx, top=my, bottom=h-my;
-  const r=Math.min(90,(right-left)/5,(bottom-top)/5);
+        // --- Procedural Dolphin Mesh Creation ---
+        function createDolphinGeometry() {
+            const geometry = new THREE.BufferGeometry();
+            const segsRadial = 16;
+            const segsLength = 32;
+            const points = [];
 
-  // Start at lower-right. Travel around the screen: bottom -> left -> top.
-  // This gives a complete visual circuit before exiting at upper-left.
-  const seg=[
-    {x:right,y:bottom},{x:left+r,y:bottom},
-    {x:left,y:bottom-r},{x:left,y:top+r},
-    {x:left+r,y:top},{x:right-r,y:top},
-    {x:right,y:top+r},{x:right,y:bottom-r}
-  ];
-  // Use a smooth polyline; the last point is lower-right, then we continue
-  // around the upper-left portion for the exit.
-  const u=clamp(t,0,1)*7;
-  const i=Math.min(6,Math.floor(u)), f=u-i;
-  const p=seg[i], q=seg[i+1];
-  return {x:p.x+(q.x-p.x)*f,y:p.y+(q.y-p.y)*f};
-}
+            // Body profile curve along Z axis (-10 to 10)
+            function getRadius(z) {
+                // Nose at +10, Tail Fluke at -10
+                if (z > 8.0) return (10.0 - z) * 0.25; // Snout
+                if (z > 2.0) return 0.5 + (8.0 - z) * 0.35; // Head to body
+                if (z > -6.0) return 2.6 * Math.cos(((z - 2.0) / 8.0) * (Math.PI / 2.0)); // Torso
+                if (z > -9.0) return 0.4 + (z + 9.0) * 0.3; // Tail stock
+                return 0.2; // Fluke base
+            }
 
-function place(x,y,angle,opacity=1,scale=1){
-  dolphin.style.opacity=opacity;
-  dolphin.style.transform=
-    `translate3d(${x-160}px,${y-80}px,0) rotate(${angle}rad) scale(${scale})`;
-}
+            const vertices = [];
+            const indices = [];
 
-function place(x,y,angle,opacity=1,scale=1){
-  dolphin.style.opacity=opacity;
-  dolphin.style.transform=
-    `translate3d(${x-130}px,${y-75}px,0) rotate(${angle}rad) scale(${scale})`;
-}
+            for (let i = 0; i <= segsLength; i++) {
+                const z = 10.0 - (i / segsLength) * 20.0;
+                const radius = getRadius(z);
 
-function summon(){
-  if(running)return;
-  running=true;
-  document.querySelectorAll("#stage>span").forEach(e=>e.remove());
+                for (let j = 0; j <= segsRadial; j++) {
+                    const theta = (j / segsRadial) * Math.PI * 2;
+                    let x = Math.cos(theta) * radius;
+                    let y = Math.sin(theta) * radius * 1.1; // Slightly flattened laterally
 
-  const w=innerWidth,h=innerHeight;
-  const enterTarget=pathPoint(0);
-  const circuitEnd=pathPoint(.98); // upper-right-ish, then arc back toward upper-left
-  const exitStart={x:Math.max(115,Math.min(165,w*.13)),y:Math.max(90,Math.min(125,h*.13))};
-  const enterFrom={x:w+220,y:h+190};
-  const exitTo={x:-230,y:-190};
+                    // Dorsal Fin protrusion around z = 0
+                    if (z > -2.0 && z < 3.0 && theta > Math.PI * 0.3 && theta < Math.PI * 0.7) {
+                        const finHeight = Math.sin((z + 2.0) / 5.0 * Math.PI) * 1.8 * Math.sin((theta - Math.PI*0.3)/(Math.PI*0.4)*Math.PI);
+                        y += finHeight;
+                    }
 
-  const t0=performance.now(), enterDur=1800, circuitDur=12000, exitDur=2200;
+                    // Fluke (Horizontal Tail Fin) around z = -9 to -10
+                    if (z <= -8.5) {
+                        const flukeFactor = ( -8.5 - z ) / 1.5;
+                        x *= (1.0 + flukeFactor * 4.5); // Spread wide
+                        y *= (1.0 - flukeFactor * 0.7); // Flatten height
+                    }
 
-  function frame(now){
-    const elapsed=now-t0;
-    if(elapsed<enterDur){
-      const q=ease(elapsed/enterDur);
-      const x=enterFrom.x+(enterTarget.x-enterFrom.x)*q;
-      const y=enterFrom.y+(enterTarget.y-enterFrom.y)*q;
-      const ang=Math.atan2(enterTarget.y-enterFrom.y,enterTarget.x-enterFrom.x);
-      place(x,y,ang,q);
-      if(Math.random()<.55)makeMist(x-80*Math.cos(ang),y-80*Math.sin(ang),ang);
-    }else if(elapsed<enterDur+circuitDur){
-      const q=(elapsed-enterDur)/circuitDur;
-      const p=pathPoint(q);
-      const p2=pathPoint(Math.min(1,q+.003));
-      const ang=Math.atan2(p2.y-p.y,p2.x-p.x);
-      place(p.x,p.y+Math.sin(q*Math.PI*18)*2.2,ang,1);
-      if(Math.random()<.3)makeMist(p.x-85*Math.cos(ang),p.y-85*Math.sin(ang),ang);
-    }else if(elapsed<enterDur+circuitDur+exitDur){
-      const q=ease((elapsed-enterDur-circuitDur)/exitDur);
-      // At the end of the circuit, smoothly redirect along the top-left exit.
-      const sx=exitStart.x+55, sy=exitStart.y+25;
-      const x=sx+(exitTo.x-sx)*q;
-      const y=sy+(exitTo.y-sy)*q;
-      const ang=Math.atan2(exitTo.y-sy,exitTo.x-sx);
-      place(x,y,ang,1-q);
-      if(Math.random()<.5)makeMist(x-85*Math.cos(ang),y-85*Math.sin(ang),ang);
-    }else{
-      dolphin.style.opacity=0;
-      document.querySelectorAll("#stage>span").forEach(e=>e.remove());
-      running=false; return;
-    }
-    raf=requestAnimationFrame(frame);
-  }
-  raf=requestAnimationFrame(frame);
-}
-stage.addEventListener("pointerdown",summon,{passive:true});
-</script>
+                    vertices.push(x, y, z);
+                }
+            }
+
+            for (let i = 0; i < segsLength; i++) {
+                for (let j = 0; j < segsRadial; j++) {
+                    const first = (i * (segsRadial + 1)) + j;
+                    const second = first + segsRadial + 1;
+
+                    indices.push(first, second, first + 1);
+                    indices.push(second, second + 1, first + 1);
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+
+            return geometry;
+        }
+
+        // --- Create Patronus Dolphin Object ---
+        const patronusMaterial = new THREE.ShaderMaterial({
+            vertexShader: patronusVertexShader,
+            fragmentShader: patronusFragmentShader,
+            uniforms: {
+                uTime: { value: 0 },
+                uSwimSpeed: { value: 6.0 },
+                uFlexibility: { value: 0.25 },
+                uOpacity: { value: 1.0 }
+            },
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+
+        const dolphinMesh = new THREE.Mesh(createDolphinGeometry(), patronusMaterial);
+        
+        // Group for rotation and position
+        const dolphinGroup = new THREE.Group();
+        dolphinGroup.add(dolphinMesh);
+        scene.add(dolphinGroup);
+        dolphinGroup.visible = false;
+
+        // --- Particle Trail System (Mist / Sparks) ---
+        const particleCount = 200;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleAlphas = new Float32Array(particleCount);
+        const particleSizes = new Float32Array(particleCount);
+
+        for (let i = 0; i < particleCount; i++) {
+            particlePositions[i * 3] = 9999; // Hide offscreen
+            particlePositions[i * 3 + 1] = 9999;
+            particlePositions[i * 3 + 2] = 9999;
+            particleAlphas[i] = 0.0;
+            particleSizes[i] = Math.random() * 2.5 + 1.0;
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        particleGeo.setAttribute('alpha', new THREE.BufferAttribute(particleAlphas, 1));
+
+        // Particle Shader
+        const particleMat = new THREE.ShaderMaterial({
+            uniforms: {
+                color: { value: new THREE.Color(0x88ccff) }
+            },
+            vertexShader: `
+                attribute float alpha;
+                varying float vAlpha;
+                void main() {
+                    vAlpha = alpha;
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    gl_PointSize = (12.0 / -mvPosition.z);
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 color;
+                varying float vAlpha;
+                void main() {
+                    float dist = length(gl_PointCoord - vec2(0.5));
+                    if (dist > 0.5) discard;
+                    float glow = pow(1.0 - dist * 2.0, 2.0);
+                    gl_FragColor = vec4(color, vAlpha * glow);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        let particleIndex = 0;
+        function emitParticle(pos) {
+            const idx = particleIndex % particleCount;
+            particlePositions[idx * 3] = pos.x + (Math.random() - 0.5) * 1.5;
+            particlePositions[idx * 3 + 1] = pos.y + (Math.random() - 0.5) * 1.5;
+            particlePositions[idx * 3 + 2] = pos.z + (Math.random() - 0.5) * 1.5;
+            particleAlphas[idx] = 0.8;
+            particleIndex++;
+            particleGeo.attributes.position.needsUpdate = true;
+            particleGeo.attributes.alpha.needsUpdate = true;
+        }
+
+        function updateParticles() {
+            const alphas = particleGeo.attributes.alpha.array;
+            for (let i = 0; i < particleCount; i++) {
+                if (alphas[i] > 0) {
+                    alphas[i] -= 0.012; // Fade out
+                    if (alphas[i] < 0) alphas[i] = 0;
+                }
+            }
+            particleGeo.attributes.alpha.needsUpdate = true;
+        }
+
+        // --- Animation Path Logic (Curve from Right-Bottom to Left-Top) ---
+        // Right-Bottom entry: approx (35, -25, -10)
+        // Mid arc center: approx (0, 5, 10)
+        // Left-Top exit: approx (-35, 25, -10)
+        const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(40, -30, -15),
+            new THREE.Vector3(25, -15, 5),
+            new THREE.Vector3(0, 5, 15),
+            new THREE.Vector3(-20, 18, 5),
+            new THREE.Vector3(-45, 32, -15)
+        ]);
+
+        let isAnimating = false;
+        let animProgress = 0;
+        const animDuration = 4.5; // Seconds for full swim loop
+
+        function triggerPatronus() {
+            if (isAnimating) return; // Prevent restart mid-animation
+            isAnimating = true;
+            animProgress = 0;
+            dolphinGroup.visible = true;
+            patronusMaterial.uniforms.uOpacity.value = 1.0;
+        }
+
+        // Click Event listener anywhere on the page
+        window.addEventListener('click', triggerPatronus);
+        window.addEventListener('touchstart', triggerPatronus, { passive: true });
+
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Render Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            patronusMaterial.uniforms.uTime.value = time;
+
+            if (isAnimating) {
+                animProgress += delta / animDuration;
+
+                if (animProgress <= 1.0) {
+                    // Current Position along curve
+                    const point = curve.getPoint(animProgress);
+                    dolphinGroup.position.copy(point);
+
+                    // Orientation along curve tangent
+                    const tangent = curve.getTangent(animProgress).normalize();
+                    const targetLookAt = point.clone().add(tangent);
+                    dolphinGroup.lookAt(targetLookAt);
+
+                    // Add dynamic banking/roll on curves
+                    const bankAngle = Math.sin(animProgress * Math.PI * 2) * 0.35;
+                    dolphinGroup.rotateZ(bankAngle);
+
+                    // Emit ethereal magical trail particles from dolphin tail
+                    const tailPos = point.clone().sub(tangent.multiplyScalar(6));
+                    emitParticle(tailPos);
+
+                    // Fade out smoothly towards the end
+                    if (animProgress > 0.85) {
+                        patronusMaterial.uniforms.uOpacity.value = (1.0 - animProgress) / 0.15;
+                    }
+                } else {
+                    isAnimating = false;
+                    dolphinGroup.visible = false;
+                }
+            }
+
+            updateParticles();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
 </body>
 </html>
