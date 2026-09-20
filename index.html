@@ -41,31 +41,31 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Smoke Wisps Trail Class
-        const smokePuffs = [];
+        // Dynamic Edge Smoke Particles
+        const edgeSmokeParticles = [];
 
-        class SmokePuff {
-            constructor(x, y, vx, vy, rx, ry, angle, maxLife) {
+        class EdgeSmoke {
+            constructor(x, y, angle, speed) {
                 this.x = x;
                 this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.rx = rx;
-                this.ry = ry;
-                this.angle = angle;
-                this.life = maxLife;
-                this.maxLife = maxLife;
-                this.vRot = (Math.random() - 0.5) * 0.04;
+                // Drift slightly outward/backward
+                const spreadAngle = angle + Math.PI + (Math.random() - 0.5) * 1.5;
+                this.vx = Math.cos(spreadAngle) * speed + (Math.random() - 0.5) * 1.2;
+                this.vy = Math.sin(spreadAngle) * speed + (Math.random() - 0.5) * 1.2;
+                this.radius = Math.random() * 18 + 12;
+                this.life = Math.random() * 25 + 15;
+                this.maxLife = this.life;
+                this.rot = Math.random() * Math.PI * 2;
+                this.vRot = (Math.random() - 0.5) * 0.08;
             }
 
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.96;
-                this.vy *= 0.96;
-                this.rx += 0.8;
-                this.ry += 0.7;
-                this.angle += this.vRot;
+                this.vx *= 0.94;
+                this.vy *= 0.94;
+                this.radius += 0.6;
+                this.rot += this.vRot;
                 this.life--;
             }
 
@@ -75,17 +75,17 @@
 
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
+                ctx.rotate(this.rot);
 
-                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.rx);
-                grad.addColorStop(0, `rgba(210, 245, 255, ${alpha * 0.25})`);
-                grad.addColorStop(0.4, `rgba(100, 200, 255, ${alpha * 0.15})`);
-                grad.addColorStop(0.8, `rgba(30, 110, 220, ${alpha * 0.04})`);
+                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+                grad.addColorStop(0, `rgba(200, 240, 255, ${alpha * 0.35})`);
+                grad.addColorStop(0.4, `rgba(100, 210, 255, ${alpha * 0.18})`);
+                grad.addColorStop(0.8, `rgba(20, 120, 230, ${alpha * 0.05})`);
                 grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.ellipse(0, 0, this.rx, this.ry, 0, 0, Math.PI * 2);
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
@@ -100,118 +100,125 @@
             return Math.sin(time * swimFreq - norm * 3.6) * 40 * flexFactor;
         }
 
-        // Correct Anatomy (Scaled Size): 背朝上(Up), 腹朝下(Down)
+        // Generate points along perimeter for smoke emission
+        function getDolphinPerimeterPoints(time, scale = 1.0) {
+            const pts = [];
+            const snoutY = getSpineY(185 * scale, time);
+            pts.push({ x: 185 * scale, y: snoutY });
+
+            // Upper body points
+            pts.push({ x: 152 * scale, y: getSpineY(152 * scale, time) + 8 * scale });
+            pts.push({ x: 68 * scale, y: getSpineY(68 * scale, time) + 40 * scale });
+
+            // Dorsal Fin
+            const dBaseY = getSpineY(14 * scale, time);
+            pts.push({ x: 20 * scale, y: dBaseY + 37 * scale });
+            pts.push({ x: -30 * scale, y: dBaseY + 86 * scale });
+            pts.push({ x: -24 * scale, y: dBaseY + 32 * scale });
+
+            // Back to Tail
+            pts.push({ x: -145 * scale, y: getSpineY(-145 * scale, time) + 8 * scale });
+
+            // Tail Fluke
+            const tailY = getSpineY(-178 * scale, time);
+            pts.push({ x: -172 * scale, y: tailY + 42 * scale });
+            pts.push({ x: -175 * scale, y: tailY });
+            pts.push({ x: -172 * scale, y: tailY - 42 * scale });
+
+            // Lower body
+            pts.push({ x: -145 * scale, y: getSpineY(-145 * scale, time) - 8 * scale });
+
+            // Pectoral Flipper
+            const pBaseY = getSpineY(33 * scale, time);
+            pts.push({ x: 26 * scale, y: pBaseY - 29 * scale });
+            pts.push({ x: -29 * scale, y: pBaseY - 78 * scale });
+            pts.push({ x: 46 * scale, y: pBaseY - 24 * scale });
+
+            pts.push({ x: 152 * scale, y: getSpineY(152 * scale, time) - 5 * scale });
+            return pts;
+        }
+
+        // Draw solid dolphin body mesh
         function drawDolphinMesh(ctx, time, scale = 1.0) {
             ctx.beginPath();
 
             const snoutY = getSpineY(185 * scale, time);
             ctx.moveTo(185 * scale, snoutY);
 
-            // --- 1. 上半身：吻部 -> 額頭 -> 背部 -> 背鰭 (UPWARD / Positive -Y) ---
+            // --- Upper Body ---
             ctx.quadraticCurveTo(165 * scale, getSpineY(165 * scale, time) + 3 * scale, 152 * scale, getSpineY(152 * scale, time) + 8 * scale);
             ctx.quadraticCurveTo(120 * scale, getSpineY(120 * scale, time) + 37 * scale, 68 * scale, getSpineY(68 * scale, time) + 40 * scale);
 
-            // 背鰭 (Dorsal Fin)
+            // Dorsal Fin
             const dBaseY = getSpineY(14 * scale, time);
             ctx.lineTo(20 * scale, dBaseY + 37 * scale);
             ctx.quadraticCurveTo(-7 * scale, dBaseY + 82 * scale, -30 * scale, dBaseY + 86 * scale);
             ctx.quadraticCurveTo(-20 * scale, dBaseY + 53 * scale, -24 * scale, dBaseY + 32 * scale);
 
-            // 背部後段 -> 尾柄上緣
+            // Back -> Tail
             ctx.quadraticCurveTo(-80 * scale, getSpineY(-80 * scale, time) + 21 * scale, -145 * scale, getSpineY(-145 * scale, time) + 8 * scale);
 
-            // 雙葉尾鰭 (Tail Fluke)
+            // Tail Fluke
             const tailY = getSpineY(-178 * scale, time);
             ctx.lineTo(-172 * scale, tailY + 42 * scale);
             ctx.quadraticCurveTo(-182 * scale, tailY + 21 * scale, -175 * scale, tailY);
             ctx.quadraticCurveTo(-182 * scale, tailY - 21 * scale, -172 * scale, tailY - 42 * scale);
 
-            // --- 2. 下半身：尾柄下緣 -> 腹部 -> 胸鰭 -> 下巴 (DOWNWARD / Positive +Y) ---
+            // --- Lower Body ---
             ctx.lineTo(-145 * scale, getSpineY(-145 * scale, time) - 8 * scale);
             ctx.quadraticCurveTo(-80 * scale, getSpineY(-80 * scale, time) - 21 * scale, -26 * scale, getSpineY(-26 * scale, time) - 29 * scale);
 
-            // 胸鰭 (Pectoral Flipper)
+            // Pectoral Flipper
             const pBaseY = getSpineY(33 * scale, time);
             ctx.lineTo(26 * scale, pBaseY - 29 * scale);
             ctx.quadraticCurveTo(-3 * scale, pBaseY - 72 * scale, -29 * scale, pBaseY - 78 * scale);
             ctx.quadraticCurveTo(-13 * scale, pBaseY - 48 * scale, 46 * scale, pBaseY - 24 * scale);
 
-            // 腹部 -> 下巴 -> 吻部
+            // Belly -> Snout
             ctx.quadraticCurveTo(106 * scale, getSpineY(106 * scale, time) - 16 * scale, 152 * scale, getSpineY(152 * scale, time) - 5 * scale);
             ctx.lineTo(185 * scale, snoutY);
             ctx.closePath();
         }
 
-        function drawSmokyPatronus(ctx, time, pos) {
+        function drawOrganicSmokyPatronus(ctx, time, pos) {
             ctx.save();
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
             ctx.globalCompositeOperation = 'lighter';
 
-            // --- Layer 1: 最外層大範圍超羽化煙霧 (Outer Smokey Feather Aura, blur 50px) ---
+            // --- 1. Core Solid Body (Solid shape in center) ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(50px)';
-            ctx.shadowColor = '#60d0ff';
-            ctx.shadowBlur = 45;
-            
-            drawDolphinMesh(ctx, time, 1.25);
-            const outerGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.45)');
-            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.28)');
-            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.12)');
-            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.02)');
-            ctx.fillStyle = outerGrad;
-            ctx.fill();
-            ctx.restore();
-
-            // --- Layer 2: 外緣半透明雲霧漸變 (Outer Edge Fuzzy Fog, blur 30px) ---
-            ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(30px)';
-
-            drawDolphinMesh(ctx, time, 1.12);
-            const edgeGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            edgeGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-            edgeGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.35)');
-            edgeGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.18)');
-            edgeGrad.addColorStop(1, 'rgba(10, 80, 200, 0.05)');
-            ctx.fillStyle = edgeGrad;
-            ctx.fill();
-            ctx.restore();
-
-            // --- Layer 3: 中間清晰身體（微柔化 blur 6px，保持內部清晰形體，但無硬邊） ---
-            ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(6px)';
-
-            drawDolphinMesh(ctx, time, 0.98);
+            drawDolphinMesh(ctx, time, 1.0);
             const coreGrad = ctx.createLinearGradient(185, 0, -178, 0);
-            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
-            coreGrad.addColorStop(0.25, 'rgba(210, 245, 255, 0.65)');
-            coreGrad.addColorStop(0.6, 'rgba(90, 195, 255, 0.40)');
-            coreGrad.addColorStop(1, 'rgba(20, 120, 230, 0.15)');
+            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            coreGrad.addColorStop(0.3, 'rgba(200, 245, 255, 0.85)');
+            coreGrad.addColorStop(0.7, 'rgba(70, 185, 255, 0.60)');
+            coreGrad.addColorStop(1, 'rgba(15, 100, 220, 0.30)');
             ctx.fillStyle = coreGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Layer 4: 拖尾流體蒸氣 (Trailing Vapor Wisps) ---
+            // --- 2. Emit Smoke Particles directly on Perimeter Edges ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
+            const pts = getDolphinPerimeterPoints(time, 1.0);
 
-            const tailY = getSpineY(-178, time);
-            for (let k = 0; k < 6; k++) {
-                const tWy = tailY + (Math.random() - 0.5) * 40;
-                const wx = pos.x + (-170 * cos - tWy * sin);
-                const wy = pos.y + (-170 * sin + tWy * cos);
+            for (let i = 0; i < pts.length; i++) {
+                const pt = pts[i];
+                // Convert local coords to world coords
+                const worldX = pos.x + (pt.x * cos - pt.y * sin);
+                const worldY = pos.y + (pt.x * sin + pt.y * cos);
 
-                smokePuffs.push(new SmokePuff(
-                    wx, wy,
-                    -cos * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    -sin * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    Math.random() * 38 + 25,
-                    Math.random() * 30 + 18,
-                    Math.random() * Math.PI * 2,
-                    Math.random() * 40 + 28
-                ));
+                // Spawn edge smoke
+                for (let k = 0; k < 2; k++) {
+                    edgeSmokeParticles.push(new EdgeSmoke(
+                        worldX + (Math.random() - 0.5) * 8,
+                        worldY + (Math.random() - 0.5) * 8,
+                        pos.angle,
+                        Math.random() * 2 + 1
+                    ));
+                }
             }
 
             ctx.restore();
@@ -263,22 +270,20 @@
 
                 if (animProgress <= 1.0) {
                     const pos = getPathPos(animProgress);
-                    drawSmokyPatronus(ctx, time, pos);
+                    drawOrganicSmokyPatronus(ctx, time, pos);
                 } else {
                     isAnimating = false;
                 }
             }
 
-            // Render ambient smoke trail
+            // Render edge smoke particles
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
-
-            for (let i = smokePuffs.length - 1; i >= 0; i--) {
-                smokePuffs[i].update();
-                smokePuffs[i].draw(ctx);
-                if (smokePuffs[i].life <= 0) {
-                    smokePuffs.splice(i, 1);
+            for (let i = edgeSmokeParticles.length - 1; i >= 0; i--) {
+                edgeSmokeParticles[i].update();
+                edgeSmokeParticles[i].draw(ctx);
+                if (edgeSmokeParticles[i].life <= 0) {
+                    edgeSmokeParticles.splice(i, 1);
                 }
             }
             ctx.restore();
