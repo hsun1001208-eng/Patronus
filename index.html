@@ -29,7 +29,7 @@
 <body>
     <canvas id="webgl"></canvas>
 
-    <!-- Three.js & OBJLoader -->
+    <!-- Three.js Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
@@ -48,7 +48,6 @@
         // --- Custom Patronus Shader ---
         const patronusVertexShader = `
             uniform float uTime;
-            uniform float uBend;
             
             varying vec3 vNormal;
             varying vec3 vViewPosition;
@@ -61,7 +60,6 @@
                 vec3 pos = position;
                 
                 // Natural dolphin undulating body movement (sine wave along Z axis)
-                // Head is at +Z, Tail is at -Z
                 float wave = sin(uTime * 7.0 - pos.z * 0.3) * 0.8;
                 
                 // Tail moves significantly more than head
@@ -90,7 +88,7 @@
             varying vec3 vWorldPosition;
             varying float vTailFactor;
 
-            // 3D Simplex-like Noise
+            // 3D Noise function
             float hash(float n) { return fract(sin(n) * 43758.5453123); }
             float noise(vec3 x) {
                 vec3 p = floor(x);
@@ -135,44 +133,41 @@
         function buildDetailedDolphinGeometry() {
             const geometry = new THREE.BufferGeometry();
             
-            // Generate detailed spline-based body mesh
             const radialSegs = 24;
             const lengthSegs = 60;
             
             const vertices = [];
-            const normals = [];
             const uvs = [];
             const indices = [];
 
-            // Z runs from +8.0 (snout tip) to -10.0 (tail fluke tip)
             function getProfile(z) {
                 let rX = 0, rY = 0, offsetY = 0;
 
                 if (z > 6.5) {
                     // Beak / Snout
-                    float t = (8.0 - z) / 1.5;
+                    let t = (8.0 - z) / 1.5;
                     rX = 0.15 + t * 0.25;
                     rY = 0.12 + t * 0.2;
                 } else if (z > 4.5) {
                     // Melon / Head Transition
-                    float t = (6.5 - z) / 2.0;
+                    let t = (6.5 - z) / 2.0;
                     rX = 0.4 + t * 1.2;
                     rY = 0.32 + t * 1.3;
                     offsetY = Math.sin(t * Math.PI) * 0.3; // Forehead bulge (melon)
                 } else if (z > -3.0) {
                     // Main Torso (Sleek stream-lined body)
-                    float t = (4.5 - z) / 7.5;
+                    let t = (4.5 - z) / 7.5;
                     rX = 1.6 * Math.sin(t * Math.PI * 0.85 + 0.3);
                     rY = 2.1 * Math.sin(t * Math.PI * 0.85 + 0.3);
                     offsetY = Math.sin(t * Math.PI) * 0.2;
                 } else if (z > -7.5) {
                     // Tapering Tail Stock
-                    float t = (-3.0 - z) / 4.5;
+                    let t = (-3.0 - z) / 4.5;
                     rX = 1.35 * (1.0 - t * 0.75);
                     rY = 1.7 * (1.0 - t * 0.75);
                 } else {
                     // Fluke Connection
-                    float t = (-7.5 - z) / 2.5;
+                    let t = (-7.5 - z) / 2.5;
                     rX = 0.35 * (1.0 - t * 0.5);
                     rY = 0.4 * (1.0 - t * 0.5);
                 }
@@ -192,32 +187,29 @@
 
                     // --- Append Dorsal Fin (Top, around z = -0.5 to -3.5) ---
                     if (z < 0.5 && z > -3.5 && theta > Math.PI * 0.35 && theta < Math.PI * 0.65) {
-                        float finT = (0.5 - z) / 4.0; // 0 to 1
-                        float finFactor = Math.sin(finT * Math.PI);
-                        float angleCenter = Math.PI * 0.5;
-                        float distFromCenter = 1.0 - Math.abs(theta - angleCenter) / (Math.PI * 0.15);
-                        float finHeight = finFactor * distFromCenter * 2.2;
+                        let finT = (0.5 - z) / 4.0;
+                        let finFactor = Math.sin(finT * Math.PI);
+                        let angleCenter = Math.PI * 0.5;
+                        let distFromCenter = 1.0 - Math.abs(theta - angleCenter) / (Math.PI * 0.15);
+                        let finHeight = finFactor * distFromCenter * 2.2;
                         
-                        // Curved backward fin tip
                         vy += finHeight;
                         vz -= finHeight * 0.4;
                     }
 
                     // --- Append Pectoral Flippers (Sides, around z = 2.0 to 0.0) ---
-                    // Right Flipper
                     if (z < 2.5 && z > -0.5 && theta > Math.PI * 1.15 && theta < Math.PI * 1.45) {
-                        float flipT = (2.5 - z) / 3.0;
-                        float flipFactor = Math.sin(flipT * Math.PI);
-                        float dist = 1.0 - Math.abs(theta - Math.PI * 1.3) / (Math.PI * 0.15);
+                        let flipT = (2.5 - z) / 3.0;
+                        let flipFactor = Math.sin(flipT * Math.PI);
+                        let dist = 1.0 - Math.abs(theta - Math.PI * 1.3) / (Math.PI * 0.15);
                         vx += flipFactor * dist * 3.2;
                         vy -= flipFactor * dist * 0.8;
                         vz -= flipFactor * dist * 1.2;
                     }
-                    // Left Flipper
                     if (z < 2.5 && z > -0.5 && theta > Math.PI * 1.55 && theta < Math.PI * 1.85) {
-                        float flipT = (2.5 - z) / 3.0;
-                        float flipFactor = Math.sin(flipT * Math.PI);
-                        float dist = 1.0 - Math.abs(theta - Math.PI * 1.7) / (Math.PI * 0.15);
+                        let flipT = (2.5 - z) / 3.0;
+                        let flipFactor = Math.sin(flipT * Math.PI);
+                        let dist = 1.0 - Math.abs(theta - Math.PI * 1.7) / (Math.PI * 0.15);
                         vx -= flipFactor * dist * 3.2;
                         vy -= flipFactor * dist * 0.8;
                         vz -= flipFactor * dist * 1.2;
@@ -225,12 +217,11 @@
 
                     // --- Append Tail Fluke (Wide horizontal blade at z < -8.0) ---
                     if (z <= -8.0) {
-                        float flukeT = (-8.0 - z) / 2.0; // 0 to 1
-                        float span = flukeT * 5.5;
-                        // Spread out horizontally (X axis)
+                        let flukeT = (-8.0 - z) / 2.0;
+                        let span = flukeT * 5.5;
                         if (vx >= 0) vx += span;
                         else vx -= span;
-                        vy *= (1.0 - flukeT * 0.7); // Flatten vertically
+                        vy *= (1.0 - flukeT * 0.7);
                     }
 
                     vertices.push(vx, vy, vz);
@@ -347,7 +338,7 @@
             particleGeo.attributes.alpha.needsUpdate = true;
         }
 
-        // --- Path Swimming Curve (From Right-Bottom to Left-Top) ---
+        // --- Path Swimming Curve ---
         const pathCurve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(38, -28, -10),
             new THREE.Vector3(22, -14, 5),
@@ -358,7 +349,7 @@
 
         let isAnimating = false;
         let progress = 0;
-        const duration = 5.0; // 5 seconds smooth swim
+        const duration = 5.0;
 
         function triggerAnimation() {
             if (isAnimating) return;
@@ -369,6 +360,7 @@
         }
 
         window.addEventListener('click', triggerAnimation);
+        window.addEventListener('pointerdown', triggerAnimation);
         window.addEventListener('touchstart', triggerAnimation, { passive: true });
 
         window.addEventListener('resize', () => {
@@ -391,24 +383,19 @@
                 progress += delta / duration;
 
                 if (progress <= 1.0) {
-                    // Position along path
                     const point = pathCurve.getPoint(progress);
                     dolphinGroup.position.copy(point);
 
-                    // Direction & Orientation
                     const tangent = pathCurve.getTangent(progress).normalize();
                     const lookTarget = point.clone().add(tangent);
                     dolphinGroup.lookAt(lookTarget);
 
-                    // Roll / Bank angle during swim curve
                     const bank = Math.sin(progress * Math.PI * 1.5) * 0.4;
                     dolphinGroup.rotateZ(bank);
 
-                    // Emit misty trail behind dolphin
                     const tailOffset = tangent.clone().multiplyScalar(-8);
                     emitParticles(point.clone().add(tailOffset));
 
-                    // Fade out near end of trajectory
                     if (progress > 0.82) {
                         patronusMaterial.uniforms.uOpacity.value = (1.0 - progress) / 0.18;
                     }
