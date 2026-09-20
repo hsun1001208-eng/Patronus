@@ -5,213 +5,209 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Patronus</title>
 <style>
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
-  body{touch-action:manipulation}
-  canvas{display:block;width:100vw;height:100vh;background:#000}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+body{touch-action:manipulation}
+#stage{position:fixed;inset:0;background:#000;overflow:hidden}
+#dolphin{
+  position:absolute;width:190px;height:105px;left:0;top:0;
+  transform-origin:50% 50%;opacity:0;
+  filter:drop-shadow(0 0 7px rgba(137,222,255,.95))
+         drop-shadow(0 0 24px rgba(66,170,255,.48));
+  will-change:transform,opacity;
+}
+#dolphin svg{width:100%;height:100%;overflow:visible}
+.body{fill:url(#bodyGrad);stroke:rgba(206,248,255,.82);stroke-width:1.2}
+.fin{fill:url(#finGrad);stroke:rgba(205,248,255,.7);stroke-width:1}
+#tail,#pectoral,#pectoral2,#dorsal{transform-box:fill-box;transform-origin:center}
+#tail{transform-origin:76% 50%}
+#pectoral{transform-origin:50% 10%}
+#pectoral2{transform-origin:50% 90%}
+#dorsal{transform-origin:40% 100%}
+.wobble{animation:wobble .62s ease-in-out infinite}
+@keyframes wobble{
+  0%,100%{transform:translateY(0) scaleY(1)}
+  50%{transform:translateY(1.5px) scaleY(.985)}
+}
+#tail{animation:tail .42s ease-in-out infinite alternate}
+@keyframes tail{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+#pectoral{animation:fin .58s ease-in-out infinite alternate}
+#pectoral2{animation:fin2 .58s ease-in-out infinite alternate}
+@keyframes fin{from{transform:rotate(-5deg)}to{transform:rotate(10deg)}}
+@keyframes fin2{from{transform:rotate(7deg)}to{transform:rotate(-9deg)}}
+#dorsal{animation:dorsal .75s ease-in-out infinite alternate}
+@keyframes dorsal{from{transform:rotate(-3deg)}to{transform:rotate(4deg)}}
+.smoke{position:absolute;border-radius:50%;pointer-events:none;filter:blur(5px);mix-blend-mode:screen}
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
+<div id="stage">
+<div id="dolphin" aria-hidden="true">
+<svg viewBox="0 0 380 210">
+<defs>
+ <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="rgba(228,251,255,.88)"/>
+  <stop offset=".38" stop-color="rgba(157,226,247,.82)"/>
+  <stop offset=".72" stop-color="rgba(73,169,213,.64)"/>
+  <stop offset="1" stop-color="rgba(33,103,160,.42)"/>
+ </linearGradient>
+ <linearGradient id="finGrad" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="rgba(192,242,255,.78)"/>
+  <stop offset="1" stop-color="rgba(60,158,211,.38)"/>
+ </linearGradient>
+ <filter id="soft"><feGaussianBlur stdDeviation="2.2"/></filter>
+</defs>
+<g class="wobble">
+ <!-- main anatomically recognizable bottlenose-dolphin silhouette -->
+ <path class="body" d="M46 103
+   C60 73 91 55 134 51
+   C174 47 205 58 235 71
+   C257 80 280 83 303 78
+   C320 75 336 77 350 84
+   C337 94 321 99 304 101
+   C280 104 259 106 238 119
+   C207 138 173 154 128 154
+   C92 154 62 139 46 119
+   C40 112 41 107 46 103Z"/>
+ <!-- beak -->
+ <path class="body" d="M285 79 C315 68 347 74 367 83 C350 92 320 94 292 91Z"/>
+ <!-- forehead / melon highlight -->
+ <path d="M255 74 C274 57 301 62 319 75 C302 80 280 83 255 80Z"
+       fill="rgba(225,251,255,.22)" filter="url(#soft)"/>
+ <!-- dorsal fin -->
+ <path id="dorsal" class="fin" d="M171 57 C176 29 195 12 207 18 C211 33 207 48 198 62Z"/>
+ <!-- far pectoral -->
+ <path id="pectoral2" class="fin" opacity=".48"
+       d="M181 119 C164 146 139 171 116 177 C127 151 145 127 163 110Z"/>
+ <!-- near pectoral -->
+ <path id="pectoral" class="fin"
+       d="M211 119 C225 146 246 170 270 176 C258 150 243 126 228 110Z"/>
+ <!-- tail stock -->
+ <path class="body" d="M55 96 C37 91 23 96 12 108 C25 111 38 111 55 108Z"/>
+ <!-- tail flukes -->
+ <g id="tail">
+   <path class="fin" d="M31 105 C17 85 0 76 0 61 C20 68 39 83 49 101Z"/>
+   <path class="fin" d="M32 109 C17 126 3 139 1 153 C21 147 39 132 49 113Z"/>
+ </g>
+ <!-- eye -->
+ <circle cx="310" cy="78" r="3.2" fill="rgba(3,24,35,.98)"/>
+ <circle cx="311" cy="77" r="1" fill="rgba(255,255,255,.9)"/>
+ <!-- subtle body contour -->
+ <path d="M72 103 C112 73 173 67 231 86 C256 94 279 92 302 87"
+       fill="none" stroke="rgba(240,253,255,.34)" stroke-width="2"/>
+</g>
+</svg>
+</div>
+</div>
 <script>
-(() => {
-  const canvas = document.getElementById("c");
-  const ctx = canvas.getContext("2d");
-  let W=0,H=0,dpr=1,active=false,started=0,raf=0;
-  const smoke=[];
+const stage=document.getElementById('stage');
+const d=document.getElementById('dolphin');
+let busy=false,raf=0;
 
-  function resize(){
-    dpr=Math.min(devicePixelRatio||1,2);
-    W=innerWidth; H=innerHeight;
-    canvas.width=Math.round(W*dpr);
-    canvas.height=Math.round(H*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function smooth(t){return t*t*(3-2*t)}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+
+function buildPath(){
+  const w=innerWidth,h=innerHeight;
+  const m=Math.max(115,Math.min(170,Math.min(w,h)*.15));
+  const x0=m,x1=w-m,y0=m,y1=h-m;
+  const r=Math.max(55,Math.min(95,Math.min(w,h)*.10));
+  const pts=[];
+  function line(ax,ay,bx,by,n=30){
+    for(let i=0;i<n;i++){const t=i/(n-1);pts.push({x:ax+(bx-ax)*t,y:ay+(by-ay)*t})}
   }
-  addEventListener("resize",resize,{passive:true});
-  resize();
-
-  function ease(t){return t*t*(3-2*t)}
-  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-  function lerp(a,b,t){return a+(b-a)*t}
-
-  // A rounded-rectangle route kept safely inside the viewport.
-  function route(t){
-    const inset=Math.max(115,Math.min(170,Math.min(W,H)*.16));
-    const x0=inset, y0=inset, x1=W-inset, y1=H-inset;
-    const r=Math.max(45,Math.min(100,Math.min(W,H)*.12));
-    const seg=[];
-    const add=(len,fn)=>seg.push({len,fn});
-    const arc=Math.PI*r/2;
-    add(x1-x0-2*r,u=>({x:x0+r+u*(x1-x0-2*r),y:y1,dx:1,dy:0}));
-    add(arc,u=>{let a=Math.PI/2+u*Math.PI/2;return {x:x1-r+r*Math.cos(a),y:y1-r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}});
-    add(y1-y0-2*r,u=>({x:x1,y1:y1, x:x1,y:y1-r-u*(y1-y0-2*r),dx:0,dy:-1}));
-    add(arc,u=>{let a=0-u*Math.PI/2;return {x:x1-r+r*Math.cos(a),y:y0+r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}});
-    add(x1-x0-2*r,u=>({x:x1-r-u*(x1-x0-2*r),y:y0,dx:-1,dy:0}));
-    add(arc,u=>{let a=-Math.PI/2-u*Math.PI/2;return {x:x0+r+r*Math.cos(a),y:y0+r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}});
-    add(y1-y0-2*r,u=>({x:x0,y:y0+r+u*(y1-y0-2*r),dx:0,dy:1}));
-    add(arc,u=>{let a=Math.PI-u*Math.PI/2;return {x:x0+r+r*Math.cos(a),y:y1-r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}});
-    const total=seg.reduce((s,a)=>s+a.len,0);
-    let q=((t%1)+1)%1*total;
-    for(const s of seg){
-      if(q<=s.len)return s.fn(q/s.len);
-      q-=s.len;
+  function arc(cx,cy,rad,a0,a1,n=16){
+    for(let i=0;i<n;i++){const t=i/(n-1),a=a0+(a1-a0)*t;pts.push({x:cx+rad*Math.cos(a),y:cy+rad*Math.sin(a)})}
+  }
+  // Start near lower-right, then go around clockwise, ending near upper-left.
+  line(x1-r,y1,x0+r,y1);
+  arc(x0+r,y1-r,r,Math.PI/2,Math.PI);
+  line(x0,y1-r,x0,y0+r);
+  arc(x0+r,y0+r,r,Math.PI,Math.PI*1.5);
+  line(x0+r,y0,x1-r,y0);
+  arc(x1-r,y0+r,r,-Math.PI/2,0);
+  line(x1,y0+r,x1,y1-r);
+  arc(x1-r,y1-r,r,0,Math.PI/2);
+  // continue along bottom to return toward the lower-right, making a full loop
+  // The exit will be handled separately from the upper-left point.
+  return pts;
+}
+function samplePath(points,t){
+  const n=points.length, u=clamp(t,0,1)*(n-1), i=Math.min(n-2,Math.floor(u)), f=u-i;
+  const a=points[i],b=points[i+1];
+  const x=a.x+(b.x-a.x)*f,y=a.y+(b.y-a.y)*f;
+  const dx=b.x-a.x,dy=b.y-a.y;
+  return {x,y,ang:Math.atan2(dy,dx)};
+}
+function makeSmoke(x,y,ang){
+  for(let i=0;i<2;i++){
+    const s=document.createElement('i');s.className='smoke';
+    const size=10+Math.random()*22;
+    s.style.width=size+'px';s.style.height=size+'px';
+    s.style.left=(x-size/2+(Math.random()-.5)*18)+'px';
+    s.style.top=(y-size/2+(Math.random()-.5)*18)+'px';
+    s.style.background='radial-gradient(circle,rgba(150,225,255,.22),rgba(80,170,235,.06) 45%,transparent 72%)';
+    stage.appendChild(s);
+    let life=650+Math.random()*600, born=performance.now();
+    function drift(now){
+      const q=(now-born)/life;
+      if(q>=1){s.remove();return}
+      s.style.opacity=(1-q)*.7;
+      s.style.transform=`translate(${Math.cos(ang)*(-22*q)+(Math.random()-.5)*2}px,${Math.sin(ang)*(-22*q)+(Math.random()-.5)*2}px) scale(${1+q*1.6})`;
+      requestAnimationFrame(drift);
     }
-    return seg[0].fn(0);
+    requestAnimationFrame(drift);
   }
-
-  function addSmoke(x,y,ang,amount=2){
-    for(let i=0;i<amount;i++){
-      smoke.push({
-        x:x+Math.random()*12-6,y:y+Math.random()*12-6,
-        vx:-Math.cos(ang)*(.25+Math.random()*.8)+(Math.random()-.5)*.5,
-        vy:-Math.sin(ang)*(.25+Math.random()*.8)+(Math.random()-.5)*.5,
-        life:.45+Math.random()*.65,size:3+Math.random()*9
-      });
+}
+function setDolphin(x,y,ang,opacity=1){
+  const deg=ang*180/Math.PI;
+  d.style.opacity=opacity;
+  d.style.transform=`translate3d(${x-95}px,${y-52}px,0) rotate(${deg}deg)`;
+}
+function summon(){
+  if(busy)return;busy=true;
+  const path=buildPath();
+  // Enter from genuinely off-screen lower-right, already facing toward the route.
+  const enterTarget=samplePath(path,0);
+  const exitTarget=samplePath(path,.47); // upper-left after a complete loop segment
+  const t0=performance.now(), enter=1500, loop=11500, exit=1800;
+  function frame(now){
+    const elapsed=now-t0;
+    if(elapsed<enter){
+      const q=smooth(elapsed/enter);
+      const x=innerWidth+170+(enterTarget.x-(innerWidth+170))*q;
+      const y=innerHeight+150+(enterTarget.y-(innerHeight+150))*q;
+      const ang=Math.atan2(enterTarget.y-y,enterTarget.x-x);
+      setDolphin(x,y,ang,q);
+      if(Math.random()<.55)makeSmoke(x-65*Math.cos(ang),y-65*Math.sin(ang),ang);
+    }else if(elapsed<enter+loop){
+      const q=(elapsed-enter)/loop;
+      // One full clockwise circuit, beginning at lower-right.
+      const p=samplePath(path,q);
+      const p2=samplePath(path,Math.min(1,q+.004));
+      const ang=Math.atan2(p2.y-p.y,p2.x-p.x);
+      setDolphin(p.x,p.y,ang,1);
+      if(Math.random()<.38)makeSmoke(p.x-70*Math.cos(ang),p.y-70*Math.sin(ang),ang);
+    }else if(elapsed<enter+loop+exit){
+      // From the top-left portion, continue naturally off the upper-left.
+      const q=smooth((elapsed-enter-loop)/exit);
+      const p=samplePath(path,.48);
+      const x=p.x+(-180-p.x)*q;
+      const y=p.y+(-150-p.y)*q;
+      const ang=Math.atan2(-150-p.y,-180-p.x);
+      setDolphin(x,y,ang,1-q);
+      if(Math.random()<.45)makeSmoke(x-65*Math.cos(ang),y-65*Math.sin(ang),ang);
+    }else{
+      d.style.opacity=0;
+      document.querySelectorAll('.smoke').forEach(e=>e.remove());
+      busy=false;return;
     }
-    if(smoke.length>260)smoke.splice(0,smoke.length-260);
+    raf=requestAnimationFrame(frame);
   }
-
-  function drawSmoke(dt){
-    for(let i=smoke.length-1;i>=0;i--){
-      const s=smoke[i];
-      s.x+=s.vx*dt*60; s.y+=s.vy*dt*60; s.life-=dt;
-      if(s.life<=0){smoke.splice(i,1);continue}
-      ctx.beginPath();
-      ctx.fillStyle=`rgba(135,220,255,${Math.min(.22,s.life*.18)})`;
-      ctx.shadowBlur=18;ctx.shadowColor="rgba(80,190,255,.45)";
-      ctx.arc(s.x,s.y,s.size*(1.5-s.life*.35),0,Math.PI*2);
-      ctx.fill();ctx.shadowBlur=0;
-    }
-  }
-
-  // Recognizable dolphin silhouette: rounded forehead, long rostrum,
-  // dorsal fin, pectoral fins and two tail flukes.
-  function drawDolphin(x,y,angle,t){
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.rotate(angle);
-    const pulse=Math.sin(t*15);
-    const wave=Math.sin(t*15)*.10;
-    ctx.globalCompositeOperation="lighter";
-    ctx.shadowColor="rgba(85,205,255,.9)";
-    ctx.shadowBlur=24;
-
-    ctx.beginPath();
-    ctx.moveTo(-64,2);
-    ctx.bezierCurveTo(-57,-18,-35,-25,-12,-22);
-    ctx.bezierCurveTo(8,-20,22,-12,39,-9);
-    ctx.bezierCurveTo(52,-7,63,-11,76,-8);
-    ctx.bezierCurveTo(66,1,55,7,42,8);
-    ctx.bezierCurveTo(25,10,13,18,-5,20);
-    ctx.bezierCurveTo(-28,24,-49,17,-64,2);
-    ctx.closePath();
-    const body=ctx.createLinearGradient(-60,-20,75,20);
-    body.addColorStop(0,"rgba(105,220,255,.12)");
-    body.addColorStop(.45,"rgba(180,245,255,.82)");
-    body.addColorStop(1,"rgba(65,175,245,.55)");
-    ctx.fillStyle=body;ctx.fill();
-
-    // snout
-    ctx.beginPath();
-    ctx.moveTo(35,-9);ctx.quadraticCurveTo(64,-15,82,-8);
-    ctx.quadraticCurveTo(67,-1,39,3);ctx.closePath();
-    ctx.fillStyle="rgba(170,240,255,.78)";ctx.fill();
-
-    // dorsal fin
-    ctx.beginPath();
-    ctx.moveTo(-4,-18);ctx.quadraticCurveTo(2,-45,15,-35);
-    ctx.quadraticCurveTo(18,-25,12,-17);ctx.closePath();
-    ctx.fillStyle="rgba(115,220,255,.65)";ctx.fill();
-
-    // near pectoral fin
-    ctx.beginPath();
-    ctx.moveTo(10,10);ctx.quadraticCurveTo(18,38,35,43);
-    ctx.quadraticCurveTo(31,18,21,5);ctx.closePath();
-    ctx.fillStyle="rgba(100,215,255,.72)";ctx.fill();
-
-    // far pectoral fin
-    ctx.beginPath();
-    ctx.moveTo(-7,-13);ctx.quadraticCurveTo(-22,-37,-37,-35);
-    ctx.quadraticCurveTo(-29,-14,-16,-7);ctx.closePath();
-    ctx.fillStyle="rgba(115,225,255,.4)";ctx.fill();
-
-    // flexible tail stock
-    ctx.beginPath();
-    ctx.moveTo(-55,-8);
-    ctx.quadraticCurveTo(-70,-9-7*wave,-82,2+8*wave);
-    ctx.quadraticCurveTo(-70,13+7*wave,-55,10);
-    ctx.closePath();
-    ctx.fillStyle="rgba(120,225,255,.7)";ctx.fill();
-
-    // tail flukes
-    ctx.beginPath();
-    ctx.moveTo(-78,3);
-    ctx.quadraticCurveTo(-99,-16-9*pulse,-112,-12);
-    ctx.quadraticCurveTo(-108,5,-84,8);
-    ctx.quadraticCurveTo(-105,24+9*pulse,-112,31);
-    ctx.quadraticCurveTo(-91,30,-78,7);
-    ctx.closePath();
-    ctx.fillStyle="rgba(155,240,255,.82)";ctx.fill();
-
-    // eye
-    ctx.shadowBlur=4;ctx.fillStyle="rgba(0,20,35,.95)";
-    ctx.beginPath();ctx.arc(48,-8,2.6,0,Math.PI*2);ctx.fill();
-
-    // drifting translucent contour
-    ctx.shadowBlur=0;ctx.strokeStyle="rgba(210,250,255,.35)";
-    ctx.lineWidth=1.2;ctx.beginPath();
-    ctx.moveTo(-53,-1);ctx.bezierCurveTo(-15,-32,28,-25,65,-9);ctx.stroke();
-
-    ctx.restore();
-  }
-
-  function summon(){
-    if(active)return;
-    active=true;started=performance.now();smoke.length=0;
-    cancelAnimationFrame(raf);
-    let last=performance.now();
-    const enter=900, lap=10500, exit=1500, total=enter+lap+exit;
-
-    function animate(now){
-      const dt=Math.min(.04,(now-last)/1000);last=now;
-      const elapsed=now-started;
-      ctx.clearRect(0,0,W,H);
-      drawSmoke(dt);
-
-      let x,y,dx,dy,opacity=1,scale=1;
-      if(elapsed<enter){
-        const q=ease(elapsed/enter);
-        const target=route(.12);
-        x=lerp(W+150,target.x,q); y=lerp(H+130,target.y,q);
-        dx=target.dx;dy=target.dy;opacity=q;scale=.86+.14*q;
-      }else if(elapsed<enter+lap){
-        const q=(elapsed-enter)/lap;
-        const p=route(.12+q);
-        x=p.x;y=p.y;dx=p.dx;dy=p.dy;
-      }else{
-        const q=ease(clamp((elapsed-enter-lap)/exit,0,1));
-        const from=route(.12);
-        x=lerp(from.x,-170,q);y=lerp(from.y,-150,q);
-        dx=-.72;dy=-.7;opacity=1-q;scale=1-.08*q;
-      }
-
-      const angle=Math.atan2(dy,dx);
-      addSmoke(x,y,angle,elapsed<total?2:0);
-      drawDolphin(x,y,angle,now/1000);
-      ctx.globalAlpha=opacity;
-      // redraw a soft veil over the dolphin's edges by using compositing glow
-      ctx.globalAlpha=1;
-
-      if(elapsed<total){
-        raf=requestAnimationFrame(animate);
-      }else{
-        ctx.clearRect(0,0,W,H);smoke.length=0;active=false;
-      }
-    }
-    raf=requestAnimationFrame(animate);
-  }
-
-  addEventListener("pointerdown",summon,{passive:true});
-})();
+  raf=requestAnimationFrame(frame);
+}
+addEventListener('pointerdown',summon,{passive:true});
 </script>
 </body>
 </html>
