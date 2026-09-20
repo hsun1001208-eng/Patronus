@@ -1,7 +1,1 @@
-{
-  "name":"dolphin-patronus-natural-swim",
-  "version":"3.0.0",
-  "private":true,
-  "scripts":{"start":"node server.js"},
-  "engines":{"node":">=18"}
-}
+{"name":"dolphin-patronus-smoky-real","version":"4.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=18"}}
