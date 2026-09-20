@@ -1,218 +1,113 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Dolphin Patronus</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Patronus</title>
 <style>
-  * { box-sizing: border-box; }
-  html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    touch-action: manipulation;
-  }
-
-  #stage {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    background: #000;
-    cursor: pointer;
-  }
-
-  /* The generated dolphin artwork has a black background.
-     Screen blending makes that black disappear into the black stage. */
-  #dolphin {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: clamp(280px, 31vw, 430px);
-    height: auto;
-    opacity: 0;
-    pointer-events: none;
-    user-select: none;
-    mix-blend-mode: screen;
-    transform-origin: 50% 55%;
-    will-change: transform, opacity;
-  }
-
-  #dolphin.visible {
-    opacity: 1;
-  }
-
-  /* Subtle breathing / swimming motion on top of the curved path.
-     This is intentionally small so it feels like a living animal,
-     not a shaking image. */
-  #dolphin.swimming {
-    animation: bodySwim 0.72s ease-in-out infinite;
-  }
-
-  @keyframes bodySwim {
-    0%, 100% {
-      filter:
-        drop-shadow(0 0 8px rgba(135,220,255,.55))
-        drop-shadow(0 0 24px rgba(60,150,255,.28));
-    }
-    50% {
-      filter:
-        drop-shadow(0 0 14px rgba(180,240,255,.9))
-        drop-shadow(0 0 34px rgba(60,150,255,.45));
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    #dolphin.swimming { animation: none; }
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+  body{background:#000;touch-action:manipulation}
+  #stage{position:fixed;inset:0;overflow:hidden;background:#000}
+  #dolphin{
+    position:absolute;left:0;top:0;width:360px;height:auto;
+    pointer-events:none;user-select:none;opacity:0;
+    transform-origin:50% 50%;
+    will-change:transform,opacity;
+    mix-blend-mode:screen;
   }
 </style>
 </head>
 <body>
 <div id="stage">
-  <img id="dolphin" src="dolphin.png" alt="">
+  <img id="dolphin" src="dolphin-swim.png" alt="">
 </div>
-
 <script>
 (() => {
-  const stage = document.getElementById("stage");
-  const dolphin = document.getElementById("dolphin");
+  const dolphin=document.getElementById('dolphin');
+  let busy=false, raf=0;
+  const TAU=Math.PI*2;
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 
-  let running = false;
-  let raf = 0;
-
-  // The artwork itself points roughly toward the upper-right.
-  const ART_BASE_ANGLE = -35 * Math.PI / 180;
-
-  const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-
-  function layout() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-
-    // Keep the entire dolphin safely inside the viewport during
-    // the circular section. The final exit is done separately.
-    const imgW = clamp(w * 0.31, 280, 430);
-    const imgH = imgW * (490 / 580);
-
-    const rx = Math.max(80, w / 2 - imgW * 0.62);
-    const ry = Math.max(70, h / 2 - imgH * 0.62);
-
-    return {
-      w, h, imgW, imgH,
-      cx: w / 2,
-      cy: h / 2,
-      rx, ry
-    };
+  function layout(){
+    const w=innerWidth,h=innerHeight;
+    // Keep the entire dolphin safely inside the viewport during the loop.
+    const iw=Math.min(360,Math.max(220,w*0.28));
+    dolphin.style.width=iw+'px';
+    const ih=iw*420/600;
+    const rx=Math.max(70,w/2-iw*0.70);
+    const ry=Math.max(60,h/2-ih*0.70);
+    return {w,h,iw,ih,rx,ry,cx:w/2,cy:h/2};
   }
 
-  function renderOrbit(theta, t, L) {
-    // Counter-clockwise orbit. The dolphin starts at lower-right,
-    // stays inside the screen for the entire orbit, and returns
-    // to that same point after one complete revolution.
-    const x = L.cx + L.rx * Math.cos(theta);
-    const y = L.cy + L.ry * Math.sin(theta);
-
-    // Tangent of the counter-clockwise path.
-    const tx = -L.rx * Math.sin(theta);
-    const ty =  L.ry * Math.cos(theta);
-    const tangentAngle = Math.atan2(-ty, -tx);
-
-    // Small body undulation: a living-swim feel while the path remains smooth.
-    const bodyRoll = Math.sin(t * 0.014) * 0.055;
-    const bodyPitch = Math.sin(t * 0.019 + 1.2) * 0.018;
-    const scale = 1 + Math.sin(t * 0.017) * 0.018;
-
-    const angle = tangentAngle - ART_BASE_ANGLE + bodyRoll;
-
-    dolphin.style.width = `${L.imgW}px`;
-    dolphin.style.transform =
-      `translate3d(${x - L.imgW / 2}px, ${y - L.imgH / 2}px, 0) ` +
-      `rotate(${angle}rad) scale(${scale + bodyPitch})`;
+  function frameAt(t,p,theta){
+    const x=p.cx+p.rx*Math.cos(theta)-p.iw/2;
+    const y=p.cy+p.ry*Math.sin(theta)-p.ih/2;
+    const dx=-p.rx*Math.sin(theta), dy=p.ry*Math.cos(theta);
+    const angle=Math.atan2(dy,dx)*180/Math.PI;
+    dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(${angle}deg)`;
   }
 
-  function exitTopLeft(L, startX, startY) {
-    return new Promise(resolve => {
-      const duration = 1250;
-      const begin = performance.now();
-
-      function frame(now) {
-        const p = Math.min(1, (now - begin) / duration);
-        const e = 1 - Math.pow(1 - p, 3);
-
-        // Only AFTER the complete orbit do we leave the screen.
-        const x = startX + (-L.imgW * 1.2 - startX) * e;
-        const y = startY + (-L.imgH * 1.2 - startY) * e;
-
-        // Continue swimming toward the upper-left.
-        const angle = -2.55 + Math.sin(p * Math.PI * 3) * 0.035;
-        dolphin.style.transform =
-          `translate3d(${x}px, ${y}px, 0) rotate(${angle}rad) scale(${1 + 0.015 * Math.sin(p * Math.PI * 5)})`;
-
-        if (p < 1) {
-          raf = requestAnimationFrame(frame);
-        } else {
-          resolve();
-        }
+  function tween(a,b,duration,draw){
+    return new Promise(resolve=>{
+      const start=performance.now();
+      function tick(now){
+        const t=clamp((now-start)/duration,0,1);
+        const e=t*t*(3-2*t);
+        draw(a+(b-a)*e,t);
+        if(t<1) raf=requestAnimationFrame(tick); else resolve();
       }
-      raf = requestAnimationFrame(frame);
+      raf=requestAnimationFrame(tick);
     });
   }
 
-  async function summon() {
-    if (running) return;
-    running = true;
+  async function summon(){
+    if(busy)return;
+    busy=true;
+    const p=layout();
+    const startTheta=Math.PI/4; // lower-right
+    const startX=p.cx+p.rx*Math.cos(startTheta)-p.iw/2;
+    const startY=p.cy+p.ry*Math.sin(startTheta)-p.ih/2;
 
-    const L = layout();
-    dolphin.classList.add("visible", "swimming");
-
-    // 45° = lower-right. The dolphin begins here.
-    const startTheta = Math.PI / 4;
-    const orbitDuration = 7200;
-    const begin = performance.now();
-
-    await new Promise(resolve => {
-      function orbit(now) {
-        const elapsed = now - begin;
-        const p = Math.min(1, elapsed / orbitDuration);
-
-        // Exactly one full revolution, smooth and continuous.
-        const theta = startTheta - p * Math.PI * 2;
-        renderOrbit(theta, elapsed, L);
-
-        if (p < 1) {
-          raf = requestAnimationFrame(orbit);
-        } else {
-          resolve();
-        }
-      }
-      raf = requestAnimationFrame(orbit);
+    // Enter from the lower-right edge, then settle into the safe circular path.
+    const enterX=p.w+p.iw*0.15;
+    const enterY=p.h-p.ih*0.15;
+    dolphin.style.opacity='0';
+    dolphin.style.transform=`translate3d(${enterX}px,${enterY}px,0) rotate(35deg)`;
+    await new Promise(r=>requestAnimationFrame(r));
+    dolphin.style.opacity='1';
+    await tween(0,1,650,(q)=>{
+      const x=enterX+(startX-enterX)*q;
+      const y=enterY+(startY-enterY)*q;
+      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(145deg)`;
     });
 
-    // The orbit is now complete and the dolphin is still fully inside
-    // the screen. Only now does it swim out through the upper-left.
-    const endTheta = startTheta - Math.PI * 2;
-    const x = L.cx + L.rx * Math.cos(endTheta) - L.imgW / 2;
-    const y = L.cy + L.ry * Math.sin(endTheta) - L.imgH / 2;
+    // Exactly one complete lap. The dolphin stays inside the screen for this entire lap.
+    await tween(startTheta,startTheta+TAU,5200,(theta)=>frameAt(0,p,theta));
 
-    await exitTopLeft(L, x, y);
+    // Move to the upper-left INSIDE the screen first.
+    const exitTheta=5*Math.PI/4;
+    await tween(0,1,900,(q)=>{
+      const ease=q*q*(3-2*q);
+      const x=p.cx+p.rx*Math.cos(startTheta+TAU)+(p.cx-p.rx*0.55-(p.cx+p.rx*Math.cos(startTheta)))*ease-p.iw/2;
+      const y=p.cy+p.ry*Math.sin(startTheta+TAU)+(p.cy-p.ry*0.55-(p.cy+p.ry*Math.sin(startTheta)))*ease-p.ih/2;
+      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(-135deg)`;
+    });
 
-    dolphin.classList.remove("visible", "swimming");
-    dolphin.style.transform = "translate3d(-1000px,-1000px,0)";
-    running = false;
+    // Only now leave through the upper-left corner.
+    const insideX=p.cx-p.rx*0.55-p.iw/2;
+    const insideY=p.cy-p.ry*0.55-p.ih/2;
+    await tween(0,1,850,(q)=>{
+      const x=insideX+(-p.iw*1.1-insideX)*q;
+      const y=insideY+(-p.ih*1.1-insideY)*q;
+      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(-145deg)`;
+      dolphin.style.opacity=String(1-q);
+    });
+    dolphin.style.opacity='0';
+    busy=false;
   }
 
-  stage.addEventListener("pointerdown", () => {
-    summon();
-  }, { passive: true });
-
-  window.addEventListener("resize", () => {
-    // A running animation keeps its current frame; new summons use
-    // the latest viewport dimensions.
-    if (!running) {
-      dolphin.style.transform = "translate3d(-1000px,-1000px,0)";
-    }
-  });
+  addEventListener('pointerdown',summon,{passive:true});
+  addEventListener('resize',()=>{if(!busy)layout()},{passive:true});
 })();
 </script>
 </body>
