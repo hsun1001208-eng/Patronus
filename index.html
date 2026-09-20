@@ -41,101 +41,13 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Dynamic Edge Smoke Particles
-        const edgeSmokeParticles = [];
-
-        class EdgeSmoke {
-            constructor(x, y, angle, speed) {
-                this.x = x;
-                this.y = y;
-                // Drift slightly outward/backward
-                const spreadAngle = angle + Math.PI + (Math.random() - 0.5) * 1.5;
-                this.vx = Math.cos(spreadAngle) * speed + (Math.random() - 0.5) * 1.2;
-                this.vy = Math.sin(spreadAngle) * speed + (Math.random() - 0.5) * 1.2;
-                this.radius = Math.random() * 18 + 12;
-                this.life = Math.random() * 25 + 15;
-                this.maxLife = this.life;
-                this.rot = Math.random() * Math.PI * 2;
-                this.vRot = (Math.random() - 0.5) * 0.08;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= 0.94;
-                this.vy *= 0.94;
-                this.radius += 0.6;
-                this.rot += this.vRot;
-                this.life--;
-            }
-
-            draw(ctx) {
-                if (this.life <= 0) return;
-                const alpha = Math.sin((this.life / this.maxLife) * Math.PI);
-
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rot);
-
-                const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-                grad.addColorStop(0, `rgba(200, 240, 255, ${alpha * 0.35})`);
-                grad.addColorStop(0.4, `rgba(100, 210, 255, ${alpha * 0.18})`);
-                grad.addColorStop(0.8, `rgba(20, 120, 230, ${alpha * 0.05})`);
-                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
         // Spine deformation for Swimming Wave
         function getSpineY(x, time) {
-            const swimFreq = 12.0;
+            const swimFreq = 14.0;
             const norm = (180 - x) / 360;
             if (norm < 0.2) return Math.sin(norm * Math.PI) * 2.0;
             const flexFactor = Math.pow((norm - 0.2) / 0.8, 1.85);
             return Math.sin(time * swimFreq - norm * 3.6) * 40 * flexFactor;
-        }
-
-        // Generate points along perimeter for smoke emission
-        function getDolphinPerimeterPoints(time, scale = 1.0) {
-            const pts = [];
-            const snoutY = getSpineY(185 * scale, time);
-            pts.push({ x: 185 * scale, y: snoutY });
-
-            // Upper body points
-            pts.push({ x: 152 * scale, y: getSpineY(152 * scale, time) + 8 * scale });
-            pts.push({ x: 68 * scale, y: getSpineY(68 * scale, time) + 40 * scale });
-
-            // Dorsal Fin
-            const dBaseY = getSpineY(14 * scale, time);
-            pts.push({ x: 20 * scale, y: dBaseY + 37 * scale });
-            pts.push({ x: -30 * scale, y: dBaseY + 86 * scale });
-            pts.push({ x: -24 * scale, y: dBaseY + 32 * scale });
-
-            // Back to Tail
-            pts.push({ x: -145 * scale, y: getSpineY(-145 * scale, time) + 8 * scale });
-
-            // Tail Fluke
-            const tailY = getSpineY(-178 * scale, time);
-            pts.push({ x: -172 * scale, y: tailY + 42 * scale });
-            pts.push({ x: -175 * scale, y: tailY });
-            pts.push({ x: -172 * scale, y: tailY - 42 * scale });
-
-            // Lower body
-            pts.push({ x: -145 * scale, y: getSpineY(-145 * scale, time) - 8 * scale });
-
-            // Pectoral Flipper
-            const pBaseY = getSpineY(33 * scale, time);
-            pts.push({ x: 26 * scale, y: pBaseY - 29 * scale });
-            pts.push({ x: -29 * scale, y: pBaseY - 78 * scale });
-            pts.push({ x: 46 * scale, y: pBaseY - 24 * scale });
-
-            pts.push({ x: 152 * scale, y: getSpineY(152 * scale, time) - 5 * scale });
-            return pts;
         }
 
         // Draw solid dolphin body mesh
@@ -180,46 +92,58 @@
             ctx.closePath();
         }
 
-        function drawOrganicSmokyPatronus(ctx, time, pos) {
+        // Draw Clean Soft-Edged Dolphin (No Particle Smoke)
+        function drawFeatheredPatronus(ctx, time, pos) {
             ctx.save();
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
             ctx.globalCompositeOperation = 'lighter';
 
-            // --- 1. Core Solid Body (Solid shape in center) ---
+            // --- Layer 1: 細緻微暈打霧外緣 (Subtle Soft Edge Glow, blur 14px) ---
             ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(14px)';
+            ctx.shadowColor = '#00aaff';
+            ctx.shadowBlur = 18;
+
+            drawDolphinMesh(ctx, time, 1.02);
+            const edgeGrad = ctx.createLinearGradient(185, 0, -178, 0);
+            edgeGrad.addColorStop(0, 'rgba(230, 250, 255, 0.45)');
+            edgeGrad.addColorStop(0.35, 'rgba(100, 210, 255, 0.25)');
+            edgeGrad.addColorStop(0.75, 'rgba(20, 120, 230, 0.10)');
+            edgeGrad.addColorStop(1, 'rgba(0, 50, 160, 0.02)');
+            ctx.fillStyle = edgeGrad;
+            ctx.fill();
+            ctx.restore();
+
+            // --- Layer 2: 核心海豚清晰主體（邊緣微柔化 blur 3px，無疊影硬邊） ---
+            ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(3px)';
+
             drawDolphinMesh(ctx, time, 1.0);
             const coreGrad = ctx.createLinearGradient(185, 0, -178, 0);
             coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-            coreGrad.addColorStop(0.3, 'rgba(200, 245, 255, 0.85)');
-            coreGrad.addColorStop(0.7, 'rgba(70, 185, 255, 0.60)');
-            coreGrad.addColorStop(1, 'rgba(15, 100, 220, 0.30)');
+            coreGrad.addColorStop(0.25, 'rgba(215, 245, 255, 0.85)');
+            coreGrad.addColorStop(0.65, 'rgba(80, 190, 255, 0.55)');
+            coreGrad.addColorStop(1, 'rgba(20, 110, 220, 0.20)');
             ctx.fillStyle = coreGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- 2. Emit Smoke Particles directly on Perimeter Edges ---
-            const cos = Math.cos(pos.angle);
-            const sin = Math.sin(pos.angle);
-            const pts = getDolphinPerimeterPoints(time, 1.0);
-
-            for (let i = 0; i < pts.length; i++) {
-                const pt = pts[i];
-                // Convert local coords to world coords
-                const worldX = pos.x + (pt.x * cos - pt.y * sin);
-                const worldY = pos.y + (pt.x * sin + pt.y * cos);
-
-                // Spawn edge smoke
-                for (let k = 0; k < 2; k++) {
-                    edgeSmokeParticles.push(new EdgeSmoke(
-                        worldX + (Math.random() - 0.5) * 8,
-                        worldY + (Math.random() - 0.5) * 8,
-                        pos.angle,
-                        Math.random() * 2 + 1
-                    ));
-                }
-            }
+            // --- Layer 3: 尾端簡約蒸氣流線（乾淨不遮擋） ---
+            ctx.save();
+            if (ctx.filter !== undefined) ctx.filter = 'blur(12px)';
+            const tailY = getSpineY(-178, time);
+            
+            const tailGrad = ctx.createRadialGradient(-175, tailY, 0, -175, tailY, 65);
+            tailGrad.addColorStop(0, 'rgba(160, 230, 255, 0.6)');
+            tailGrad.addColorStop(0.5, 'rgba(40, 150, 240, 0.25)');
+            tailGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = tailGrad;
+            ctx.beginPath();
+            ctx.arc(-175, tailY, 65, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
 
             ctx.restore();
         }
@@ -227,7 +151,7 @@
         let isAnimating = false;
         let animProgress = 0;
         let time = 0;
-        const duration = 2.5;
+        const duration = 1.25; // Reverted back to fast speed
 
         function triggerPatronus() {
             if (isAnimating) return;
@@ -270,23 +194,11 @@
 
                 if (animProgress <= 1.0) {
                     const pos = getPathPos(animProgress);
-                    drawOrganicSmokyPatronus(ctx, time, pos);
+                    drawFeatheredPatronus(ctx, time, pos);
                 } else {
                     isAnimating = false;
                 }
             }
-
-            // Render edge smoke particles
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            for (let i = edgeSmokeParticles.length - 1; i >= 0; i--) {
-                edgeSmokeParticles[i].update();
-                edgeSmokeParticles[i].draw(ctx);
-                if (edgeSmokeParticles[i].life <= 0) {
-                    edgeSmokeParticles.splice(i, 1);
-                }
-            }
-            ctx.restore();
 
             requestAnimationFrame(render);
         }
