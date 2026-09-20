@@ -59,7 +59,6 @@
     (() => {
       const dolphin = document.getElementById('dolphin');
       let running = false;
-      let recognition = null;
 
       function point(x, y) {
         const w = window.innerWidth, h = window.innerHeight;
@@ -81,19 +80,21 @@
           const sx = parseFloat(dolphin.dataset.x || '0');
           const sy = parseFloat(dolphin.dataset.y || '0');
           const target = point(x, y);
-          const ease = t => 1 - Math.pow(1 - t, 3);
 
           function frame(now) {
             const t = Math.min(1, (now - start) / duration);
-            const e = ease(t);
+            const e = 1 - Math.pow(1 - t, 3);
             const cx = sx + (target.x - sx) * e;
             const cy = sy + (target.y - sy) * e;
+
             setPos(cx, cy, angle);
             dolphin.dataset.x = cx;
             dolphin.dataset.y = cy;
+
             if (t < 1) requestAnimationFrame(frame);
             else resolve();
           }
+
           requestAnimationFrame(frame);
         });
       }
@@ -103,8 +104,10 @@
         running = true;
         dolphin.classList.add('active');
 
-        const w = window.innerWidth, h = window.innerHeight;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         const start = point(w - 105, h - 55);
+
         dolphin.style.opacity = '1';
         dolphin.dataset.x = start.x;
         dolphin.dataset.y = start.y;
@@ -112,18 +115,15 @@
 
         // 從右下角游入
         await moveTo(w - 230, h - 125, 750, -12);
-        // 沿右側往上
+
+        // 繞螢幕一圈
         await moveTo(w - 125, h * .30, 850, -78);
-        // 游向右上
         await moveTo(w * .68, 95, 850, -135);
-        // 穿過上方到左上
         await moveTo(w * .18, 100, 950, 178);
-        // 沿左側往下
         await moveTo(70, h * .62, 850, 105);
-        // 穿過下方到右下
         await moveTo(w * .72, h - 105, 1050, 28);
-        // 再繞回左上方
         await moveTo(w * .20, 100, 1050, 178);
+
         // 從左上方游出畫面
         await moveTo(-180, -100, 900, 210);
 
@@ -132,39 +132,10 @@
         running = false;
       }
 
-      function setupSpeech() {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) return;
-
-        recognition = new SR();
-        recognition.lang = 'zh-TW';
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 5;
-
-        recognition.onresult = event => {
-          let heard = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            heard += event.results[i][0].transcript;
-          }
-          heard = heard.replace(/\s/g, '');
-
-          if (heard.includes('疾疾護法現身')) {
-            summon();
-            // 清掉本次辨識內容，避免同一句一直觸發
-            try { recognition.stop(); } catch (_) {}
-          }
-        };
-
-        recognition.onend = () => {
-          // 讓語音辨識持續待命；瀏覽器若暫停麥克風則會再次請求權限
-          setTimeout(() => {
-            try { recognition.start(); } catch (_) {}
-          }, 250);
-        };
-
-        try { recognition.start(); } catch (_) {}
-      }
+      // 點一下螢幕即可召喚海豚護法
+      document.addEventListener('pointerdown', () => {
+        summon();
+      }, { passive: true });
 
       window.addEventListener('resize', () => {
         if (!running) return;
@@ -172,8 +143,6 @@
         const y = parseFloat(dolphin.dataset.y || '0');
         setPos(x, y, 0);
       });
-
-      setupSpeech();
     })();
   </script>
 </body>
