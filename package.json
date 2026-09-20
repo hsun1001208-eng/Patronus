@@ -1,1 +1,1 @@
-{"name":"dolphin-patronus-smoky-real","version":"4.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=18"}}
+{"name":"patronus-dolphin-web","version":"5.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=18"}}

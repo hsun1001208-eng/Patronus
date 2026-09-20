@@ -5,146 +5,76 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Patronus</title>
 <style>
-*{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
-body{touch-action:manipulation;background:#000}
-#stage{position:fixed;inset:0;overflow:hidden;background:#000}
-#dolphin{
-  position:absolute;
-  width:180px;
-  height:112px;
-  opacity:0;
-  pointer-events:none;
-  background-image:url("./dolphin-swim-sprite.png");
-  background-repeat:no-repeat;
-  background-size:calc(180px * 8) 112px;
-  will-change:transform,opacity;
-  filter:drop-shadow(0 0 8px rgba(150,225,255,.8))
-         drop-shadow(0 0 26px rgba(75,180,255,.35));
+#stage{position:fixed;inset:0;background:#000;overflow:hidden;touch-action:manipulation}
+#p{
+  position:absolute;width:220px;height:220px;opacity:0;pointer-events:none;
+  background-image:url("./patronus-storyboard-sprite.png");
+  background-size:1980px 220px;background-repeat:no-repeat;
+  filter:drop-shadow(0 0 10px rgba(140,220,255,.85))
+         drop-shadow(0 0 28px rgba(50,150,255,.38));
+  will-change:transform,opacity,background-position;
 }
-#dolphin.swimming{
-  animation: dolphinFrames .68s steps(8,end) infinite;
-}
-@keyframes dolphinFrames{
-  from{background-position:0 0}
-  to{background-position:-1260px 0}
+#p.play{animation:swim .95s steps(9,end) infinite}
+@keyframes swim{
+  0%{background-position:0 0}
+  100%{background-position:-1760px 0}
 }
 </style>
 </head>
 <body>
-<div id="stage"><div id="dolphin"></div></div>
-
+<div id="stage"><div id="p"></div></div>
 <script>
-(() => {
-  const d = document.getElementById("dolphin");
-  let busy = false;
-  let raf = 0;
-
-  const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
-
-  // Rounded rectangle path. The dolphin remains safely inside the screen
-  // during the whole lap; only the final exit goes outside.
-  function pathPoint(t,w,h,inset,r){
-    const x0=inset, y0=inset, x1=w-inset, y1=h-inset;
-    const top=x1-x0-2*r, side=y1-y0-2*r;
-    const arc=Math.PI*r/2;
-    const lens=[top,arc,side,arc,top,arc,side,arc];
-    const total=lens.reduce((a,b)=>a+b,0);
-    let q=((t%1)+1)%1*total;
-
-    for(let i=0;i<8;i++){
-      if(q<=lens[i]){
-        const u=lens[i] ? q/lens[i] : 0;
-        if(i===0) return {x:x0+r+u*top,y:y0,dx:1,dy:0};
-        if(i===1){const a=-Math.PI/2+u*Math.PI/2;return {x:x1-r+r*Math.cos(a),y:y0+r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}}
-        if(i===2) return {x:x1,y:y0+r+u*side,dx:0,dy:1};
-        if(i===3){const a=u*Math.PI/2;return {x:x1-r+r*Math.cos(a),y:y1-r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}}
-        if(i===4) return {x:x1-r-u*top,y:y1,dx:-1,dy:0};
-        if(i===5){const a=Math.PI/2+u*Math.PI/2;return {x:x0+r+r*Math.cos(a),y:y1-r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)}}
-        if(i===6) return {x:x0,y:y1-r-u*side,dx:0,dy:-1};
-        const a=Math.PI+u*Math.PI/2;
-        return {x:x0+r+r*Math.cos(a),y:y0+r+r*Math.sin(a),dx:-Math.sin(a),dy:Math.cos(a)};
-      }
-      q-=lens[i];
+const p=document.getElementById('p');
+let busy=false, raf=0;
+function pt(t,w,h){
+  const inset=Math.max(125,Math.min(165,Math.min(w,h)*.15));
+  const x0=inset,y0=inset,x1=w-inset,y1=h-inset,r=Math.max(45,Math.min(90,Math.min(w,h)*.11));
+  const top=x1-x0-2*r, side=y1-y0-2*r, arc=Math.PI*r/2;
+  const L=[top,arc,side,arc,top,arc,side,arc], total=L.reduce((a,b)=>a+b,0);
+  let q=((t%1)+1)%1*total;
+  for(let i=0;i<8;i++){
+    if(q<=L[i]){
+      const u=q/L[i]||0;
+      if(i===0)return[x0+r+u*top,y0,0];
+      if(i===1){let a=-Math.PI/2+u*Math.PI/2;return[x1-r+r*Math.cos(a),y0+r+r*Math.sin(a),a*180/Math.PI+90]}
+      if(i===2)return[x1,y0+r+u*side,90];
+      if(i===3){let a=u*Math.PI/2;return[x1-r+r*Math.cos(a),y1-r+r*Math.sin(a),a*180/Math.PI+90]}
+      if(i===4)return[x1-r-u*top,y1,180];
+      if(i===5){let a=Math.PI/2+u*Math.PI/2;return[x0+r+r*Math.cos(a),y1-r+r*Math.sin(a),a*180/Math.PI+90]}
+      if(i===6)return[x0,y1-r-u*side,270];
+      let a=Math.PI+u*Math.PI/2;return[x0+r+r*Math.cos(a),y0+r+r*Math.sin(a),a*180/Math.PI+90]
     }
-    return {x:x1,y:y0,dx:1,dy:0};
+    q-=L[i];
   }
-
-  function place(x,y,angle,bank=0,scale=1){
-    d.style.transform =
-      `translate3d(${x-90}px,${y-56}px,0) rotate(${angle+bank}deg) scale(${scale})`;
+}
+function put(x,y,a,bob=0){
+  p.style.transform=`translate3d(${x-110}px,${y-110+bob}px,0) rotate(${a}deg)`;
+}
+function summon(){
+  if(busy)return; busy=true; p.classList.add('play'); p.style.opacity=1;
+  const w=innerWidth,h=innerHeight,start=.37,dur=10500,begin=performance.now();
+  function lap(now){
+    const q=Math.min(1,(now-begin)/dur), z=pt(start-q,w,h);
+    const bob=Math.sin(q*Math.PI*20)*4;
+    put(z[0],z[1],z[2],bob);
+    if(q<1)raf=requestAnimationFrame(lap);
+    else exit(z);
   }
-
-  function summon(){
-    if(busy) return;
-    busy=true;
-    const w=innerWidth,h=innerHeight;
-    const inset=Math.max(120,Math.min(165,Math.min(w,h)*.15));
-    const r=Math.max(42,Math.min(95,Math.min(w,h)*.11));
-
-    // Start near lower-right.
-    const startT=.38;
-    const start=pathPoint(startT,w,h,inset,r);
-    d.style.backgroundSize="1440px 112px";
-    d.classList.add("swimming");
-    d.style.opacity="0";
-
-    const introStart=performance.now(), introDur=700;
-    function intro(now){
-      const q=Math.min(1,(now-introStart)/introDur);
-      const e=q*q*(3-2*q);
-      const p=pathPoint(startT-.035*(1-e),w,h,inset,r);
-      const angle=Math.atan2(p.dy,p.dx)*180/Math.PI;
-      place(p.x,p.y,angle,Math.sin(q*Math.PI*2)*3,.92+.08*e);
-      d.style.opacity=e;
-      if(q<1) raf=requestAnimationFrame(intro);
-      else lap();
+  raf=requestAnimationFrame(lap);
+  function exit(from){
+    const b=performance.now(),d=1200;
+    function go(now){
+      const q=Math.min(1,(now-b)/d),e=q*q*(3-2*q);
+      put(from[0]+(-180-from[0])*e,from[1]+(-180-from[1])*e,-135,Math.sin(q*Math.PI*5)*3);
+      p.style.opacity=1-e;
+      if(q<1)raf=requestAnimationFrame(go);
+      else{p.classList.remove('play');p.style.opacity=0;busy=false}
     }
-    raf=requestAnimationFrame(intro);
-
-    function lap(){
-      const begin=performance.now(), dur=8200;
-      function frame(now){
-        const q=Math.min(1,(now-begin)/dur);
-        const p=pathPoint(startT-q,w,h,inset,r);
-        const angle=Math.atan2(p.dy,p.dx)*180/Math.PI;
-
-        // Small body-like vertical oscillation and banking on turns.
-        const kick=Math.sin(q*Math.PI*2*10);
-        const bob=Math.sin(q*Math.PI*2*10+.65)*4;
-        const bank=Math.sin(q*Math.PI*2*2)*4;
-
-        place(p.x,p.y,angle,bank,1);
-        d.style.opacity="1";
-        if(q<1) raf=requestAnimationFrame(frame);
-        else exit(p);
-      }
-      raf=requestAnimationFrame(frame);
-    }
-
-    function exit(from){
-      const begin=performance.now(), dur=1050;
-      function frame(now){
-        const q=Math.min(1,(now-begin)/dur);
-        const e=q*q*(3-2*q);
-        const x=from.x+(-220-from.x)*e;
-        const y=from.y+(-160-from.y)*e;
-        place(x,y,-135,0,1-.06*e);
-        d.style.opacity=1-e;
-        if(q<1) raf=requestAnimationFrame(frame);
-        else{
-          d.classList.remove("swimming");
-          d.style.opacity=0;
-          busy=false;
-        }
-      }
-      raf=requestAnimationFrame(frame);
-    }
+    raf=requestAnimationFrame(go);
   }
-
-  document.addEventListener("pointerdown",summon,{passive:true});
-  addEventListener("pagehide",()=>cancelAnimationFrame(raf));
-})();
+}
+document.addEventListener('pointerdown',summon,{passive:true});
 </script>
 </body>
 </html>
