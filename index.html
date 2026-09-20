@@ -42,7 +42,7 @@
             height = canvas.height = window.innerHeight;
         });
 
-        // Delicate Smoke Wisps Class
+        // Balanced Silver-Blue Smoke Wisps
         const smokePuffs = [];
 
         class SmokePuff {
@@ -62,10 +62,10 @@
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.95;
-                this.vy *= 0.95;
-                this.rx += 0.5;
-                this.ry += 0.4;
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+                this.rx += 0.6;
+                this.ry += 0.5;
                 this.angle += this.vRot;
                 this.life--;
             }
@@ -78,11 +78,11 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                // Reduced opacity drastically for subtle, elegant ether mist
+                // Perfectly balanced opacity for visible yet airy patronus smoke
                 const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.rx);
-                grad.addColorStop(0, `rgba(200, 240, 255, ${alpha * 0.10})`);
-                grad.addColorStop(0.4, `rgba(90, 190, 255, ${alpha * 0.05})`);
-                grad.addColorStop(0.8, `rgba(20, 100, 210, ${alpha * 0.015})`);
+                grad.addColorStop(0, `rgba(220, 245, 255, ${alpha * 0.18})`);
+                grad.addColorStop(0.35, `rgba(100, 205, 255, ${alpha * 0.10})`);
+                grad.addColorStop(0.75, `rgba(25, 120, 230, ${alpha * 0.03})`);
                 grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
                 ctx.fillStyle = grad;
@@ -102,7 +102,7 @@
             return Math.sin(time * swimFreq - norm * 3.6) * 40 * flexFactor;
         }
 
-        // Correct Anatomy & Adaptive Scale for Mobile / Desktop
+        // Enhanced Anatomy & Clearer Tail Fluke Definition
         function drawDolphinMesh(ctx, time, scale = 1.0) {
             ctx.save();
             ctx.scale(scale, scale);
@@ -124,11 +124,11 @@
             // 背部後段 -> 尾柄上緣
             ctx.quadraticCurveTo(-80, getSpineY(-80, time) + 21, -145, getSpineY(-145, time) + 8);
 
-            // 雙葉尾鰭 (Tail Fluke)
+            // 雙葉尾鰭 (Tail Fluke) - Distinct, enlarged & sharper blades
             const tailY = getSpineY(-178, time);
-            ctx.lineTo(-172, tailY + 42);
-            ctx.quadraticCurveTo(-182, tailY + 21, -175, tailY);
-            ctx.quadraticCurveTo(-182, tailY - 21, -172, tailY - 42);
+            ctx.lineTo(-170, tailY + 48);
+            ctx.quadraticCurveTo(-185, tailY + 24, -178, tailY);
+            ctx.quadraticCurveTo(-185, tailY - 24, -170, tailY - 48);
 
             // --- 2. 下半身：尾柄下緣 -> 腹部 -> 胸鰭 -> 下巴 ---
             ctx.lineTo(-145, getSpineY(-145, time) - 8);
@@ -159,82 +159,83 @@
 
             // --- Pass 1: 超巨額打霧外暈 ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(68px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(60px)';
             ctx.shadowColor = '#60d0ff';
             ctx.shadowBlur = 45;
             
             drawDolphinMesh(ctx, time, dolphinScale);
-            const outerGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.45)');
-            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.25)');
-            outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.12)');
-            outerGrad.addColorStop(1, 'rgba(0, 50, 170, 0.02)');
+            // Elevated gradient brightness towards tail stop (-178) so the tail stands out clearly
+            const outerGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -185 * dolphinScale, 0);
+            outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.48)');
+            outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.32)');
+            outerGrad.addColorStop(0.7, 'rgba(40, 150, 245, 0.22)');
+            outerGrad.addColorStop(1, 'rgba(20, 100, 220, 0.12)');
             ctx.fillStyle = outerGrad;
             ctx.fill();
             ctx.restore();
 
             // --- Pass 2: 大範圍蒸氣過渡霧 ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(40px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(36px)';
 
             drawDolphinMesh(ctx, time, dolphinScale);
-            const transitionGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-            transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.28)');
-            transitionGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.12)');
-            transitionGrad.addColorStop(1, 'rgba(10, 80, 200, 0.03)');
+            const transitionGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -185 * dolphinScale, 0);
+            transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.48)');
+            transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.35)');
+            transitionGrad.addColorStop(0.75, 'rgba(60, 175, 250, 0.22)');
+            transitionGrad.addColorStop(1, 'rgba(20, 110, 225, 0.14)');
             ctx.fillStyle = transitionGrad;
             ctx.fill();
             ctx.restore();
 
             // --- Pass 3: 中層軟霧輪廓 ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(22px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(20px)';
 
             drawDolphinMesh(ctx, time, dolphinScale);
-            const midGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.52)');
-            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.30)');
-            midGrad.addColorStop(0.75, 'rgba(60, 170, 250, 0.14)');
-            midGrad.addColorStop(1, 'rgba(10, 90, 210, 0.04)');
+            const midGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -185 * dolphinScale, 0);
+            midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
+            midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.38)');
+            midGrad.addColorStop(0.75, 'rgba(80, 185, 255, 0.25)');
+            midGrad.addColorStop(1, 'rgba(30, 130, 230, 0.16)');
             ctx.fillStyle = midGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 4: 核心發光柔霧 ---
+            // --- Pass 4: 核心高亮柔霧 (清晰尾巴核心) ---
             ctx.save();
-            if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(12px)';
 
             drawDolphinMesh(ctx, time, dolphinScale);
-            const coreGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
-            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
-            coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.32)');
-            coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.14)');
-            coreGrad.addColorStop(1, 'rgba(20, 120, 220, 0.02)');
+            const coreGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -185 * dolphinScale, 0);
+            coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.60)');
+            coreGrad.addColorStop(0.25, 'rgba(210, 245, 255, 0.40)');
+            coreGrad.addColorStop(0.65, 'rgba(120, 215, 255, 0.28)');
+            coreGrad.addColorStop(1, 'rgba(60, 160, 245, 0.20)');
             ctx.fillStyle = coreGrad;
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 5: 輕微薄霧靈氣 (Subtle Light Smoke Emission) ---
+            // --- Pass 5: 適度靈動煙霧粒子 ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
 
-            // Emission frequency & count significantly lowered for elegance
-            if (Math.random() < 0.35) {
+            // Balanced generation rate & position around tail
+            if (Math.random() < 0.65) {
                 const pt = { x: -175 * dolphinScale, y: getSpineY(-178, time) * dolphinScale };
-                const localX = pt.x + (Math.random() - 0.5) * 20 * dolphinScale;
-                const localY = pt.y + (Math.random() - 0.5) * 20 * dolphinScale;
+                const localX = pt.x + (Math.random() - 0.5) * 25 * dolphinScale;
+                const localY = pt.y + (Math.random() - 0.5) * 25 * dolphinScale;
                 const wx = pos.x + (localX * cos - localY * sin);
                 const wy = pos.y + (localX * sin + localY * cos);
 
                 smokePuffs.push(new SmokePuff(
                     wx, wy,
-                    -cos * (Math.random() * 2 + 1.2) + (Math.random() - 0.5) * 1.5,
-                    -sin * (Math.random() * 2 + 1.2) + (Math.random() - 0.5) * 1.5,
-                    (Math.random() * 25 + 18) * dolphinScale,
-                    (Math.random() * 20 + 12) * dolphinScale,
+                    -cos * (Math.random() * 2.8 + 1.5) + (Math.random() - 0.5) * 1.8,
+                    -sin * (Math.random() * 2.8 + 1.5) + (Math.random() - 0.5) * 1.8,
+                    (Math.random() * 30 + 20) * dolphinScale,
+                    (Math.random() * 24 + 15) * dolphinScale,
                     Math.random() * Math.PI * 2,
-                    Math.random() * 28 + 20
+                    Math.random() * 32 + 22
                 ));
             }
 
@@ -302,10 +303,10 @@
                 }
             }
 
-            // Render delicate ambient smoke trail
+            // Render balanced ambient smoke trail
             ctx.save();
             ctx.globalCompositeOperation = 'lighter';
-            if (ctx.filter !== undefined) ctx.filter = 'blur(15px)';
+            if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
 
             for (let i = smokePuffs.length - 1; i >= 0; i--) {
                 smokePuffs[i].update();
