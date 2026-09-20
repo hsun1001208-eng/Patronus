@@ -47,75 +47,85 @@ svg{width:100%;height:100%;overflow:visible}
 <body>
 <div id="stage">
   <div id="dolphin">
-    <svg viewBox="0 0 520 300" aria-hidden="true">
+    <svg viewBox="0 0 640 320" aria-hidden="true">
       <defs>
-        <linearGradient id="mist" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#effcff" stop-opacity=".94"/>
-          <stop offset=".30" stop-color="#a9e9ff" stop-opacity=".88"/>
-          <stop offset=".68" stop-color="#59bde8" stop-opacity=".63"/>
-          <stop offset="1" stop-color="#287bb8" stop-opacity=".28"/>
+        <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f2fdff" stop-opacity=".94"/>
+          <stop offset=".28" stop-color="#b8edff" stop-opacity=".86"/>
+          <stop offset=".66" stop-color="#69c7ed" stop-opacity=".58"/>
+          <stop offset="1" stop-color="#2d79b0" stop-opacity=".20"/>
         </linearGradient>
-        <linearGradient id="mist2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#d9f8ff" stop-opacity=".8"/>
-          <stop offset="1" stop-color="#55b9e8" stop-opacity=".25"/>
+        <linearGradient id="fin" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d8f8ff" stop-opacity=".78"/>
+          <stop offset="1" stop-color="#5aaee0" stop-opacity=".22"/>
         </linearGradient>
-        <filter id="blur"><feGaussianBlur stdDeviation="3"/></filter>
+        <filter id="soft"><feGaussianBlur stdDeviation="4"/></filter>
       </defs>
 
-      <!-- A recognizable bottlenose-dolphin side profile -->
+      <!-- Accurate bottlenose dolphin proportions: rounded melon + beak,
+           slender body, narrow peduncle, dorsal and pectoral fins, horizontal flukes. -->
       <g id="swim">
         <!-- far pectoral fin -->
-        <path id="finFar" d="M274 151 C258 179 234 211 201 229 C211 196 226 166 250 141Z"
-              fill="url(#mist2)" stroke="#bceeff" stroke-opacity=".45" stroke-width="2"/>
+        <path id="finFar" d="M330 173 C302 207 274 231 236 244 C249 213 274 181 304 157Z"
+              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".42" stroke-width="2"/>
 
-        <!-- main dolphin body: rounded forehead/melon, long rostrum, tapered peduncle -->
-        <path d="M102 145
-                 C119 108 159 84 207 78
-                 C245 73 283 82 313 101
-                 C334 114 357 119 384 116
-                 C413 112 445 112 474 125
-                 C451 137 422 142 390 141
-                 C365 140 345 143 324 153
-                 C294 168 263 188 221 194
-                 C177 200 136 185 111 164
-                 C101 156 98 151 102 145Z"
-              fill="url(#mist)" stroke="#d5f8ff" stroke-opacity=".82" stroke-width="2.2"/>
+        <!-- torso and head/melon -->
+        <path d="M130 151
+                 C142 113 180 89 226 82
+                 C266 76 307 83 342 102
+                 C368 116 394 121 424 117
+                 C454 113 483 113 516 124
+                 C490 139 457 146 422 145
+                 C393 144 371 150 347 164
+                 C316 182 284 198 247 202
+                 C203 207 164 192 141 171
+                 C132 163 127 157 130 151Z"
+              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".88" stroke-width="2.5"/>
 
-        <!-- forehead highlight -->
-        <path d="M247 91 C276 78 309 87 331 105 C306 110 278 107 249 100Z"
-              fill="#e9fcff" fill-opacity=".24" filter="url(#blur)"/>
+        <!-- distinct rounded forehead/melon -->
+        <path d="M270 87 C300 76 336 85 357 105 C331 110 301 108 272 101Z"
+              fill="#effcff" fill-opacity=".25" filter="url(#soft)"/>
+
+        <!-- beak/rostrum: long, narrow, unmistakably dolphin -->
+        <path d="M414 117 C451 105 500 109 551 126
+                 C526 139 478 143 428 139Z"
+              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".82" stroke-width="2.2"/>
 
         <!-- dorsal fin -->
-        <path id="dorsal"
-              d="M213 82 C216 48 235 22 251 19 C263 38 258 65 246 86Z"
-              fill="url(#mist2)" stroke="#c7f3ff" stroke-opacity=".62" stroke-width="2"/>
+        <path id="dorsal" d="M247 82 C250 48 267 19 286 12
+                              C297 37 292 67 278 87Z"
+              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".68" stroke-width="2"/>
 
         <!-- near pectoral fin -->
-        <path id="finNear"
-              d="M285 158 C303 187 328 216 359 226 C347 191 332 160 311 143Z"
-              fill="url(#mist2)" stroke="#c7f3ff" stroke-opacity=".72" stroke-width="2"/>
+        <path id="finNear" d="M325 165 C345 199 373 226 408 236
+                               C395 202 379 170 351 148Z"
+              fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".76" stroke-width="2"/>
 
-        <!-- tail stock -->
-        <path d="M112 145 C91 137 70 139 51 151 C71 160 92 163 115 157Z"
-              fill="url(#mist)" stroke="#d5f8ff" stroke-opacity=".65" stroke-width="2"/>
+        <!-- narrow tail peduncle -->
+        <path d="M145 151 C118 143 92 147 67 159
+                 C91 170 119 172 149 164Z"
+              fill="url(#body)" stroke="#d9f9ff" stroke-opacity=".72" stroke-width="2"/>
 
-        <!-- tail flukes: horizontal, like a real dolphin -->
+        <!-- horizontal dolphin tail flukes -->
         <g id="tailGroup">
-          <path d="M64 153 C45 135 19 124 2 126 C14 145 35 157 60 160Z"
-                fill="url(#mist2)" stroke="#c7f3ff" stroke-opacity=".72" stroke-width="2"/>
-          <path d="M64 158 C44 176 19 187 3 184 C14 164 36 151 61 151Z"
-                fill="url(#mist2)" stroke="#c7f3ff" stroke-opacity=".72" stroke-width="2"/>
+          <path d="M77 160 C51 146 20 141 3 149
+                   C18 166 46 171 76 167Z"
+                fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".75" stroke-width="2"/>
+          <path d="M77 164 C51 178 20 184 4 177
+                   C19 160 47 155 76 158Z"
+                fill="url(#fin)" stroke="#d4f7ff" stroke-opacity=".75" stroke-width="2"/>
         </g>
 
-        <!-- eye -->
-        <circle cx="397" cy="122" r="4.2" fill="#071b28"/>
-        <circle cx="398.3" cy="120.7" r="1.35" fill="#fff"/>
+        <!-- eye and small mouth line -->
+        <circle cx="437" cy="119" r="4.4" fill="#071923"/>
+        <circle cx="438.4" cy="117.5" r="1.35" fill="#fff"/>
+        <path d="M472 132 C494 133 514 130 531 126"
+              fill="none" stroke="#f3fdff" stroke-opacity=".45" stroke-width="2"/>
 
-        <!-- subtle smile line and body contour -->
-        <path d="M406 128 C427 129 444 127 459 123"
-              fill="none" stroke="#e6fbff" stroke-opacity=".45" stroke-width="2"/>
-        <path d="M126 143 C169 112 230 102 291 119 C321 128 348 129 380 125"
-              fill="none" stroke="#f1fdff" stroke-opacity=".28" stroke-width="3"/>
+        <!-- subtle smoky inner contour -->
+        <path d="M153 148 C201 111 267 104 329 122
+                 C360 131 389 133 421 127"
+              fill="none" stroke="#f5feff" stroke-opacity=".26" stroke-width="3"/>
       </g>
     </svg>
   </div>
@@ -156,22 +166,33 @@ function makeMist(x,y,angle){
   the lower-right corner, enters the oval, makes one broad circuit, then
   leaves toward the upper-left.  The whole circuit stays inside the viewport.
 */
-function ovalPoint(t){
+function pathPoint(t){
   const w=innerWidth,h=innerHeight;
-  const marginX=Math.min(170,Math.max(115,w*.13));
-  const marginY=Math.min(125,Math.max(90,h*.13));
-  const cx=w/2, cy=h/2;
-  const rx=Math.max(120,w/2-marginX-105);
-  const ry=Math.max(90,h/2-marginY-75);
+  const mx=Math.max(115,Math.min(165,w*.13));
+  const my=Math.max(90,Math.min(125,h*.13));
+  const left=mx, right=w-mx, top=my, bottom=h-my;
+  const r=Math.min(90,(right-left)/5,(bottom-top)/5);
 
-  // start at lower-right (45deg), travel counter-clockwise,
-  // then exit at upper-left after one broad sweep.
-  const start=Math.PI/4;
-  const a=start + t*Math.PI*2.02;
-  return {
-    x:cx+rx*Math.cos(a),
-    y:cy+ry*Math.sin(a)
-  };
+  // Start at lower-right. Travel around the screen: bottom -> left -> top.
+  // This gives a complete visual circuit before exiting at upper-left.
+  const seg=[
+    {x:right,y:bottom},{x:left+r,y:bottom},
+    {x:left,y:bottom-r},{x:left,y:top+r},
+    {x:left+r,y:top},{x:right-r,y:top},
+    {x:right,y:top+r},{x:right,y:bottom-r}
+  ];
+  // Use a smooth polyline; the last point is lower-right, then we continue
+  // around the upper-left portion for the exit.
+  const u=clamp(t,0,1)*7;
+  const i=Math.min(6,Math.floor(u)), f=u-i;
+  const p=seg[i], q=seg[i+1];
+  return {x:p.x+(q.x-p.x)*f,y:p.y+(q.y-p.y)*f};
+}
+
+function place(x,y,angle,opacity=1,scale=1){
+  dolphin.style.opacity=opacity;
+  dolphin.style.transform=
+    `translate3d(${x-160}px,${y-80}px,0) rotate(${angle}rad) scale(${scale})`;
 }
 
 function place(x,y,angle,opacity=1,scale=1){
@@ -186,53 +207,43 @@ function summon(){
   document.querySelectorAll("#stage>span").forEach(e=>e.remove());
 
   const w=innerWidth,h=innerHeight;
-  const start=ovalPoint(0);
-  const end=ovalPoint(1);
+  const enterTarget=pathPoint(0);
+  const circuitEnd=pathPoint(.98); // upper-right-ish, then arc back toward upper-left
+  const exitStart={x:Math.max(115,Math.min(165,w*.13)),y:Math.max(90,Math.min(125,h*.13))};
+  const enterFrom={x:w+220,y:h+190};
+  const exitTo={x:-230,y:-190};
 
-  // Fully off-screen lower-right -> oval start.
-  const enterFrom={x:w+190,y:h+150};
-  // Upper-left exit direction.
-  const exitTo={x:-210,y:-170};
-
-  const t0=performance.now();
-  const enterDur=1700;
-  const swimDur=11500;
-  const exitDur=2100;
+  const t0=performance.now(), enterDur=1800, circuitDur=12000, exitDur=2200;
 
   function frame(now){
     const elapsed=now-t0;
-
     if(elapsed<enterDur){
       const q=ease(elapsed/enterDur);
-      const x=enterFrom.x+(start.x-enterFrom.x)*q;
-      const y=enterFrom.y+(start.y-enterFrom.y)*q;
-      const dx=start.x-enterFrom.x,dy=start.y-enterFrom.y;
-      place(x,y,Math.atan2(dy,dx),q);
-      if(Math.random()<.7)makeMist(x-70*Math.cos(Math.atan2(dy,dx)),y-70*Math.sin(Math.atan2(dy,dx)),Math.atan2(dy,dx));
-    }
-    else if(elapsed<enterDur+swimDur){
-      const q=(elapsed-enterDur)/swimDur;
-      const p=ovalPoint(q);
-      const p2=ovalPoint(Math.min(1,q+.002));
-      const angle=Math.atan2(p2.y-p.y,p2.x-p.x);
-      // Gentle vertical breathing motion so it feels alive, not like a sprite.
-      const bob=Math.sin(q*Math.PI*16)*2.5;
-      place(p.x,p.y+bob,angle,1);
-      if(Math.random()<.32)makeMist(p.x-80*Math.cos(angle),p.y-80*Math.sin(angle),angle);
-    }
-    else if(elapsed<enterDur+swimDur+exitDur){
-      const q=ease((elapsed-enterDur-swimDur)/exitDur);
-      const x=end.x+(exitTo.x-end.x)*q;
-      const y=end.y+(exitTo.y-end.y)*q;
-      const angle=Math.atan2(exitTo.y-end.y,exitTo.x-end.x);
-      place(x,y,angle,1-q);
-      if(Math.random()<.6)makeMist(x-70*Math.cos(angle),y-70*Math.sin(angle),angle);
-    }
-    else{
+      const x=enterFrom.x+(enterTarget.x-enterFrom.x)*q;
+      const y=enterFrom.y+(enterTarget.y-enterFrom.y)*q;
+      const ang=Math.atan2(enterTarget.y-enterFrom.y,enterTarget.x-enterFrom.x);
+      place(x,y,ang,q);
+      if(Math.random()<.55)makeMist(x-80*Math.cos(ang),y-80*Math.sin(ang),ang);
+    }else if(elapsed<enterDur+circuitDur){
+      const q=(elapsed-enterDur)/circuitDur;
+      const p=pathPoint(q);
+      const p2=pathPoint(Math.min(1,q+.003));
+      const ang=Math.atan2(p2.y-p.y,p2.x-p.x);
+      place(p.x,p.y+Math.sin(q*Math.PI*18)*2.2,ang,1);
+      if(Math.random()<.3)makeMist(p.x-85*Math.cos(ang),p.y-85*Math.sin(ang),ang);
+    }else if(elapsed<enterDur+circuitDur+exitDur){
+      const q=ease((elapsed-enterDur-circuitDur)/exitDur);
+      // At the end of the circuit, smoothly redirect along the top-left exit.
+      const sx=exitStart.x+55, sy=exitStart.y+25;
+      const x=sx+(exitTo.x-sx)*q;
+      const y=sy+(exitTo.y-sy)*q;
+      const ang=Math.atan2(exitTo.y-sy,exitTo.x-sx);
+      place(x,y,ang,1-q);
+      if(Math.random()<.5)makeMist(x-85*Math.cos(ang),y-85*Math.sin(ang),ang);
+    }else{
       dolphin.style.opacity=0;
       document.querySelectorAll("#stage>span").forEach(e=>e.remove());
-      running=false;
-      return;
+      running=false; return;
     }
     raf=requestAnimationFrame(frame);
   }
