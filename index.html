@@ -5,109 +5,331 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Patronus</title>
 <style>
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
-  body{background:#000;touch-action:manipulation}
-  #stage{position:fixed;inset:0;overflow:hidden;background:#000}
-  #dolphin{
-    position:absolute;left:0;top:0;width:360px;height:auto;
-    pointer-events:none;user-select:none;opacity:0;
-    transform-origin:50% 50%;
-    will-change:transform,opacity;
-    mix-blend-mode:screen;
-  }
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+body{background:#000;touch-action:manipulation}
+#stage{position:fixed;inset:0;overflow:hidden;background:#000}
+#dolphin{
+  position:absolute;
+  width:190px;
+  height:112px;
+  left:0;top:0;
+  opacity:0;
+  pointer-events:none;
+  transform-origin:50% 50%;
+  will-change:transform,opacity;
+  filter:drop-shadow(0 0 9px rgba(150,225,255,.85))
+         drop-shadow(0 0 25px rgba(70,170,255,.42));
+}
+svg{width:100%;height:100%;overflow:visible}
+#animal{transform-origin:74px 56px}
+#bodyGroup{transform-origin:76px 56px}
+#tailGroup{transform-origin:43px 56px}
+#leftFin,#rightFin{transform-box:fill-box;transform-origin:100% 15%}
+#tailFluke{transform-origin:43px 56px}
+.body{fill:url(#bodyGrad);stroke:#b9f1ff;stroke-width:1.2}
+.shade{fill:url(#shadeGrad);opacity:.7}
+.fin{fill:url(#finGrad);stroke:#a9e9ff;stroke-width:1}
+.eye{fill:#06131b}
+.eyeGlow{fill:#e8fbff}
+.mist{fill:none;stroke:#a8eaff;stroke-linecap:round;opacity:.28}
+.spark{fill:#dffbff;opacity:.65}
+
+#dolphin.swimming #tailFluke{
+  animation:tailKick .34s ease-in-out infinite alternate;
+}
+#dolphin.swimming #bodyGroup{
+  animation:bodyFlex .68s ease-in-out infinite alternate;
+}
+#dolphin.swimming #leftFin{
+  animation:finStroke .7s ease-in-out infinite alternate;
+}
+#dolphin.swimming #rightFin{
+  animation:finStrokeR .7s ease-in-out infinite alternate;
+}
+#dolphin.swimming .mist{
+  animation:mistPulse 1s ease-in-out infinite;
+}
+@keyframes tailKick{
+  from{transform:rotate(-18deg)}
+  to{transform:rotate(18deg)}
+}
+@keyframes bodyFlex{
+  from{transform:rotate(-3deg) translateY(-1px)}
+  to{transform:rotate(3deg) translateY(1px)}
+}
+@keyframes finStroke{
+  from{transform:rotate(10deg)}
+  to{transform:rotate(-17deg)}
+}
+@keyframes finStrokeR{
+  from{transform:rotate(-8deg)}
+  to{transform:rotate(13deg)}
+}
+@keyframes mistPulse{
+  0%,100%{opacity:.18}
+  50%{opacity:.42}
+}
+@media (prefers-reduced-motion:reduce){
+  #dolphin.swimming #tailFluke,
+  #dolphin.swimming #bodyGroup,
+  #dolphin.swimming #leftFin,
+  #dolphin.swimming #rightFin,
+  #dolphin.swimming .mist{animation:none}
+}
 </style>
 </head>
 <body>
 <div id="stage">
-  <img id="dolphin" src="dolphin-swim.png" alt="">
+  <div id="dolphin" aria-hidden="true">
+    <svg viewBox="0 0 190 112">
+      <defs>
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f4fdff"/>
+          <stop offset=".34" stop-color="#b8eeff"/>
+          <stop offset=".72" stop-color="#65c9ee"/>
+          <stop offset="1" stop-color="#2f8fc4"/>
+        </linearGradient>
+        <linearGradient id="shadeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e7fbff" stop-opacity=".15"/>
+          <stop offset="1" stop-color="#1473a8" stop-opacity=".75"/>
+        </linearGradient>
+        <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#e9fcff"/>
+          <stop offset="1" stop-color="#58bfe7"/>
+        </linearGradient>
+        <filter id="soft">
+          <feGaussianBlur stdDeviation="2.5"/>
+        </filter>
+      </defs>
+
+      <g id="animal">
+        <!-- faint magical vapor -->
+        <path class="mist" d="M18 66 C3 74, 4 91, 22 96"/>
+        <path class="mist" d="M28 73 C10 83, 17 101, 37 103"/>
+        <circle class="spark" cx="14" cy="88" r="2"/>
+        <circle class="spark" cx="24" cy="99" r="1.4"/>
+        <circle class="spark" cx="9" cy="76" r="1.1"/>
+
+        <!-- body flexes slightly as the tail propels it -->
+        <g id="bodyGroup">
+          <!-- dorsal fin -->
+          <path class="fin" d="M92 33 C101 12,113 9,119 13 C117 28,109 39,101 45 Z"/>
+          <!-- actual dolphin body + beak -->
+          <path class="body" d="
+            M43 56
+            C50 39,69 28,91 27
+            C111 26,128 32,143 42
+            C154 49,166 50,181 47
+            C173 57,163 63,151 64
+            C140 66,129 62,119 59
+            C108 56,99 58,91 65
+            C80 75,66 81,52 78
+            C43 76,37 68,43 56 Z"/>
+          <path class="shade" d="
+            M45 60 C61 58,78 57,94 61
+            C105 64,113 68,126 66
+            C113 73,99 72,89 68
+            C77 64,64 67,52 73 C46 70,43 65,45 60Z"/>
+          <!-- pectoral fins -->
+          <g id="leftFin">
+            <path class="fin" d="M105 57 C112 68,111 82,101 91 C98 78,98 67,101 58 Z"/>
+          </g>
+          <g id="rightFin">
+            <path class="fin" d="M118 47 C130 40,140 42,146 49 C137 53,129 57,120 59 Z"/>
+          </g>
+          <!-- eye -->
+          <circle class="eye" cx="151" cy="47" r="3"/>
+          <circle class="eyeGlow" cx="152" cy="46" r="1"/>
+          <!-- smile -->
+          <path d="M165 52 Q171 55 177 50" fill="none" stroke="#9eeaff" stroke-width="1.4" stroke-linecap="round"/>
+        </g>
+
+        <!-- tail peduncle and flukes -->
+        <g id="tailGroup">
+          <path class="body" d="M51 61 C42 61,34 58,28 56 C34 51,42 49,51 51 C56 54,56 58,51 61Z"/>
+          <g id="tailFluke">
+            <path class="fin" d="M36 56 C27 42,17 39,8 42 C14 51,22 56,34 59 Z"/>
+            <path class="fin" d="M36 56 C27 70,17 73,8 70 C14 61,22 56,34 53 Z"/>
+          </g>
+        </g>
+      </g>
+    </svg>
+  </div>
 </div>
+
 <script>
 (() => {
-  const dolphin=document.getElementById('dolphin');
-  let busy=false, raf=0;
-  const TAU=Math.PI*2;
-  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const dolphin = document.getElementById('dolphin');
+  let busy = false;
+  let raf = 0;
 
-  function layout(){
-    const w=innerWidth,h=innerHeight;
-    // Keep the entire dolphin safely inside the viewport during the loop.
-    const iw=Math.min(360,Math.max(220,w*0.28));
-    dolphin.style.width=iw+'px';
-    const ih=iw*420/600;
-    const rx=Math.max(70,w/2-iw*0.70);
-    const ry=Math.max(60,h/2-ih*0.70);
-    return {w,h,iw,ih,rx,ry,cx:w/2,cy:h/2};
-  }
+  const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
 
-  function frameAt(t,p,theta){
-    const x=p.cx+p.rx*Math.cos(theta)-p.iw/2;
-    const y=p.cy+p.ry*Math.sin(theta)-p.ih/2;
-    const dx=-p.rx*Math.sin(theta), dy=p.ry*Math.cos(theta);
-    const angle=Math.atan2(dy,dx)*180/Math.PI;
-    dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(${angle}deg)`;
-  }
+  function roundedRectPoint(t, w, h, inset, radius){
+    const x0 = inset, y0 = inset;
+    const x1 = w - inset, y1 = h - inset;
+    const r = Math.min(radius, (x1-x0)/2, (y1-y0)/2);
 
-  function tween(a,b,duration,draw){
-    return new Promise(resolve=>{
-      const start=performance.now();
-      function tick(now){
-        const t=clamp((now-start)/duration,0,1);
-        const e=t*t*(3-2*t);
-        draw(a+(b-a)*e,t);
-        if(t<1) raf=requestAnimationFrame(tick); else resolve();
+    const seg = [
+      {len:x1-x0-2*r, kind:'top'},
+      {len:Math.PI*r/2, kind:'tr'},
+      {len:y1-y0-2*r, kind:'right'},
+      {len:Math.PI*r/2, kind:'br'},
+      {len:x1-x0-2*r, kind:'bottom'},
+      {len:Math.PI*r/2, kind:'bl'},
+      {len:y1-y0-2*r, kind:'left'},
+      {len:Math.PI*r/2, kind:'tl'}
+    ];
+    const total = seg.reduce((s,q)=>s+q.len,0);
+    let d = ((t%1)+1)%1 * total;
+
+    for(const q of seg){
+      if(d <= q.len){
+        const u = q.len ? d/q.len : 0;
+        switch(q.kind){
+          case 'top':
+            return {x:x0+r + u*(x1-x0-2*r), y:y0, dx:1, dy:0};
+          case 'tr':{
+            const a=-Math.PI/2 + u*Math.PI/2;
+            return {x:x1-r+r*Math.cos(a), y:y0+r+r*Math.sin(a), dx:-Math.sin(a), dy:Math.cos(a)};
+          }
+          case 'right':
+            return {x:x1, y:y0+r + u*(y1-y0-2*r), dx:0, dy:1};
+          case 'br':{
+            const a=u*Math.PI/2;
+            return {x:x1-r+r*Math.cos(a), y:y1-r+r*Math.sin(a), dx:-Math.sin(a), dy:Math.cos(a)};
+          }
+          case 'bottom':
+            return {x:x1-r-u*(x1-x0-2*r), y:y1, dx:-1, dy:0};
+          case 'bl':{
+            const a=Math.PI/2+u*Math.PI/2;
+            return {x:x0+r+r*Math.cos(a), y:y1-r+r*Math.sin(a), dx:-Math.sin(a), dy:Math.cos(a)};
+          }
+          case 'left':
+            return {x:x0, y:y1-r-u*(y1-y0-2*r), dx:0, dy:-1};
+          case 'tl':{
+            const a=Math.PI+u*Math.PI/2;
+            return {x:x0+r+r*Math.cos(a), y:y0+r+r*Math.sin(a), dx:-Math.sin(a), dy:Math.cos(a)};
+          }
+        }
       }
-      raf=requestAnimationFrame(tick);
-    });
+      d -= q.len;
+    }
+    return {x:x1,y:y0,dx:1,dy:0};
   }
 
-  async function summon(){
-    if(busy)return;
-    busy=true;
-    const p=layout();
-    const startTheta=Math.PI/4; // lower-right
-    const startX=p.cx+p.rx*Math.cos(startTheta)-p.iw/2;
-    const startY=p.cy+p.ry*Math.sin(startTheta)-p.ih/2;
-
-    // Enter from the lower-right edge, then settle into the safe circular path.
-    const enterX=p.w+p.iw*0.15;
-    const enterY=p.h-p.ih*0.15;
-    dolphin.style.opacity='0';
-    dolphin.style.transform=`translate3d(${enterX}px,${enterY}px,0) rotate(35deg)`;
-    await new Promise(r=>requestAnimationFrame(r));
-    dolphin.style.opacity='1';
-    await tween(0,1,650,(q)=>{
-      const x=enterX+(startX-enterX)*q;
-      const y=enterY+(startY-enterY)*q;
-      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(145deg)`;
-    });
-
-    // Exactly one complete lap. The dolphin stays inside the screen for this entire lap.
-    await tween(startTheta,startTheta+TAU,5200,(theta)=>frameAt(0,p,theta));
-
-    // Move to the upper-left INSIDE the screen first.
-    const exitTheta=5*Math.PI/4;
-    await tween(0,1,900,(q)=>{
-      const ease=q*q*(3-2*q);
-      const x=p.cx+p.rx*Math.cos(startTheta+TAU)+(p.cx-p.rx*0.55-(p.cx+p.rx*Math.cos(startTheta)))*ease-p.iw/2;
-      const y=p.cy+p.ry*Math.sin(startTheta+TAU)+(p.cy-p.ry*0.55-(p.cy+p.ry*Math.sin(startTheta)))*ease-p.ih/2;
-      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(-135deg)`;
-    });
-
-    // Only now leave through the upper-left corner.
-    const insideX=p.cx-p.rx*0.55-p.iw/2;
-    const insideY=p.cy-p.ry*0.55-p.ih/2;
-    await tween(0,1,850,(q)=>{
-      const x=insideX+(-p.iw*1.1-insideX)*q;
-      const y=insideY+(-p.ih*1.1-insideY)*q;
-      dolphin.style.transform=`translate3d(${x}px,${y}px,0) rotate(-145deg)`;
-      dolphin.style.opacity=String(1-q);
-    });
-    dolphin.style.opacity='0';
-    busy=false;
+  function setTransform(x,y,angle,swimY,scale=1){
+    dolphin.style.transform =
+      `translate3d(${x}px,${y+swimY}px,0) rotate(${angle}deg) scale(${scale})`;
   }
 
-  addEventListener('pointerdown',summon,{passive:true});
-  addEventListener('resize',()=>{if(!busy)layout()},{passive:true});
+  function play(){
+    if(busy) return;
+    busy = true;
+
+    const w = innerWidth;
+    const h = innerHeight;
+    const inset = Math.max(125, Math.min(170, Math.min(w,h)*0.16));
+    const radius = Math.max(45, Math.min(105, Math.min(w,h)*0.12));
+
+    // Start at the lower-right, but already safely inside the viewport.
+    const startT = 0.365;
+    const start = roundedRectPoint(startT,w,h,inset,radius);
+
+    dolphin.style.opacity = '0';
+    dolphin.classList.add('swimming');
+
+    // Fade in just inside the lower-right corner.
+    const introStart = performance.now();
+    const introDur = 650;
+
+    function intro(now){
+      const q = Math.min(1,(now-introStart)/introDur);
+      const e = q*q*(3-2*q);
+      const p = roundedRectPoint(startT - 0.035*(1-e),w,h,inset,radius);
+      const ang = Math.atan2(p.dy,p.dx)*180/Math.PI;
+      const swim = Math.sin(q*Math.PI*2)*3;
+      setTransform(p.x-95,p.y-56,ang,swim,0.9+0.1*e);
+      dolphin.style.opacity = String(e);
+      if(q<1) raf=requestAnimationFrame(intro);
+      else loop();
+    }
+
+    requestAnimationFrame(intro);
+
+    function loop(){
+      const begin = performance.now();
+      const duration = 7600;
+
+      function frame(now){
+        const q = Math.min(1,(now-begin)/duration);
+
+        // Exactly one complete lap, entirely inside the inset rounded rectangle.
+        const t = startT - q;
+
+        const p = roundedRectPoint(t,w,h,inset,radius);
+        const angle = Math.atan2(p.dy,p.dx)*180/Math.PI;
+
+        // Dolphins swim by vertical tail beats; body rises/falls with each beat.
+        const kick = Math.sin(q * Math.PI * 2 * 8);
+        const bodyBob = Math.sin(q * Math.PI * 2 * 8 + 0.8) * 5;
+
+        // Subtle banking makes turns feel like a living animal rather than a sprite.
+        const bank = Math.sin(q * Math.PI * 2 * 2) * 5;
+
+        setTransform(p.x-95,p.y-56,angle+bank,bodyBob + kick*1.5,1);
+
+        if(q<1){
+          raf=requestAnimationFrame(frame);
+        }else{
+          exit();
+        }
+      }
+      raf=requestAnimationFrame(frame);
+    }
+
+    function exit(){
+      // The lap is finished. Only now may the dolphin leave the screen.
+      const begin=performance.now();
+      const from=roundedRectPoint(startT,w,h,inset,radius);
+      const duration=950;
+
+      function frame(now){
+        const q=Math.min(1,(now-begin)/duration);
+        const e=q*q*(3-2*q);
+
+        // Move from the completed lap position toward the upper-left and
+        // beyond the viewport.
+        const x=from.x + (-220-from.x)*e;
+        const y=from.y + (-150-from.y)*e;
+        const angle=Math.atan2(-1,-1)*180/Math.PI;
+        const bob=Math.sin(q*Math.PI*5)*4;
+
+        setTransform(x-95,y-56,angle,bob,1-0.08*e);
+        dolphin.style.opacity=String(1-e);
+
+        if(q<1){
+          raf=requestAnimationFrame(frame);
+        }else{
+          dolphin.classList.remove('swimming');
+          dolphin.style.opacity='0';
+          busy=false;
+        }
+      }
+      raf=requestAnimationFrame(frame);
+    }
+  }
+
+  document.addEventListener('pointerdown', play, {passive:true});
+
+  window.addEventListener('resize', () => {
+    if(!busy) return;
+  });
+
+  window.addEventListener('pagehide', () => {
+    cancelAnimationFrame(raf);
+  });
 })();
 </script>
 </body>
