@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dolphin Patronus</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #000; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    #stage { position: fixed; inset: 0; overflow: hidden; background: #000; }
+    #dolphin {
+      position: absolute;
+      width: 150px;
+      height: 90px;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      pointer-events: none;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 0 10px rgba(185,235,255,.85)) drop-shadow(0 0 28px rgba(75,190,255,.45));
+    }
+    #dolphin svg { width: 100%; height: 100%; overflow: visible; }
+    #dolphin .body { fill: #d8f5ff; stroke: #8bdcff; stroke-width: 2; }
+    #dolphin .shade { fill: #78c8e9; }
+    #dolphin .fin { fill: #9ce3fa; stroke: #78c8e9; stroke-width: 1.5; }
+    #dolphin .eye { fill: #07131b; }
+    #dolphin .spark { fill: #fff; opacity: .9; }
+
+    @keyframes shimmer {
+      0%,100% { filter: drop-shadow(0 0 8px rgba(185,235,255,.7)) drop-shadow(0 0 20px rgba(75,190,255,.35)); }
+      50% { filter: drop-shadow(0 0 15px rgba(220,250,255,1)) drop-shadow(0 0 36px rgba(75,190,255,.65)); }
+    }
+    #dolphin.active { animation: shimmer .8s ease-in-out infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      #dolphin.active { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage" aria-hidden="true">
+    <div id="dolphin">
+      <svg viewBox="0 0 180 105" role="img" aria-label="海豚護法">
+        <path class="fin" d="M70 25 C54 3, 35 4, 24 13 C43 16, 54 25, 61 37 Z"/>
+        <path class="fin" d="M107 38 C122 17, 137 19, 144 28 C131 29, 120 37, 112 48 Z"/>
+        <path class="body" d="M16 55 C30 35, 57 27, 92 34 C115 39, 132 50, 153 48 C163 47, 169 42, 175 36 C172 55, 160 67, 144 70 C127 74, 115 70, 102 66 C90 63, 81 68, 69 77 C58 85, 45 91, 32 87 C45 78, 51 68, 50 60 C39 61, 27 61, 16 55 Z"/>
+        <path class="shade" d="M50 60 C70 59, 91 57, 108 61 C119 64, 130 69, 144 70 C128 74, 115 70, 102 66 C90 63, 81 68, 69 77 C58 85, 45 91, 32 87 C46 78, 51 68, 50 60 Z"/>
+        <path class="fin" d="M82 66 C77 82, 83 94, 96 99 C96 84, 94 75, 90 65 Z"/>
+        <path class="fin" d="M53 39 C45 25, 47 17, 56 10 C64 19, 66 29, 62 39 Z"/>
+        <circle class="eye" cx="151" cy="48" r="2.8"/>
+        <circle class="spark" cx="152" cy="47" r=".9"/>
+        <path fill="none" stroke="#a9eaff" stroke-width="2" stroke-linecap="round" d="M160 54 Q166 57 171 52"/>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const dolphin = document.getElementById('dolphin');
+      let running = false;
+      let recognition = null;
+
+      function point(x, y) {
+        const w = window.innerWidth, h = window.innerHeight;
+        const dw = 150, dh = 90;
+        return {
+          x: Math.max(-dw, Math.min(w, x)),
+          y: Math.max(-dh, Math.min(h, y))
+        };
+      }
+
+      function setPos(x, y, angle) {
+        const p = point(x, y);
+        dolphin.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${angle}deg)`;
+      }
+
+      function moveTo(x, y, duration, angle) {
+        return new Promise(resolve => {
+          const start = performance.now();
+          const sx = parseFloat(dolphin.dataset.x || '0');
+          const sy = parseFloat(dolphin.dataset.y || '0');
+          const target = point(x, y);
+          const ease = t => 1 - Math.pow(1 - t, 3);
+
+          function frame(now) {
+            const t = Math.min(1, (now - start) / duration);
+            const e = ease(t);
+            const cx = sx + (target.x - sx) * e;
+            const cy = sy + (target.y - sy) * e;
+            setPos(cx, cy, angle);
+            dolphin.dataset.x = cx;
+            dolphin.dataset.y = cy;
+            if (t < 1) requestAnimationFrame(frame);
+            else resolve();
+          }
+          requestAnimationFrame(frame);
+        });
+      }
+
+      async function summon() {
+        if (running) return;
+        running = true;
+        dolphin.classList.add('active');
+
+        const w = window.innerWidth, h = window.innerHeight;
+        const start = point(w - 105, h - 55);
+        dolphin.style.opacity = '1';
+        dolphin.dataset.x = start.x;
+        dolphin.dataset.y = start.y;
+        setPos(start.x, start.y, -12);
+
+        // 從右下角游入
+        await moveTo(w - 230, h - 125, 750, -12);
+        // 沿右側往上
+        await moveTo(w - 125, h * .30, 850, -78);
+        // 游向右上
+        await moveTo(w * .68, 95, 850, -135);
+        // 穿過上方到左上
+        await moveTo(w * .18, 100, 950, 178);
+        // 沿左側往下
+        await moveTo(70, h * .62, 850, 105);
+        // 穿過下方到右下
+        await moveTo(w * .72, h - 105, 1050, 28);
+        // 再繞回左上方
+        await moveTo(w * .20, 100, 1050, 178);
+        // 從左上方游出畫面
+        await moveTo(-180, -100, 900, 210);
+
+        dolphin.style.opacity = '0';
+        dolphin.classList.remove('active');
+        running = false;
+      }
+
+      function setupSpeech() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) return;
+
+        recognition = new SR();
+        recognition.lang = 'zh-TW';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 5;
+
+        recognition.onresult = event => {
+          let heard = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            heard += event.results[i][0].transcript;
+          }
+          heard = heard.replace(/\s/g, '');
+
+          if (heard.includes('疾疾護法現身')) {
+            summon();
+            // 清掉本次辨識內容，避免同一句一直觸發
+            try { recognition.stop(); } catch (_) {}
+          }
+        };
+
+        recognition.onend = () => {
+          // 讓語音辨識持續待命；瀏覽器若暫停麥克風則會再次請求權限
+          setTimeout(() => {
+            try { recognition.start(); } catch (_) {}
+          }, 250);
+        };
+
+        try { recognition.start(); } catch (_) {}
+      }
+
+      window.addEventListener('resize', () => {
+        if (!running) return;
+        const x = parseFloat(dolphin.dataset.x || '0');
+        const y = parseFloat(dolphin.dataset.y || '0');
+        setPos(x, y, 0);
+      });
+
+      setupSpeech();
+    })();
+  </script>
+</body>
+</html>
