@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Patronus Dolphin</title>
     <style>
         * {
@@ -18,6 +18,7 @@
             width: 100%;
             height: 100%;
             cursor: pointer;
+            touch-action: manipulation;
         }
         canvas {
             display: block;
@@ -100,18 +101,20 @@
             return Math.sin(time * swimFreq - norm * 3.6) * 40 * flexFactor;
         }
 
-        // Correct Anatomy & Scaled Up ~1.35x: 背朝上(Up), 腹朝下(Down)
-        function drawDolphinMesh(ctx, time) {
+        // Correct Anatomy & Adaptive Scale for Mobile / Desktop
+        function drawDolphinMesh(ctx, time, scale = 1.0) {
+            ctx.save();
+            ctx.scale(scale, scale);
             ctx.beginPath();
 
             const snoutY = getSpineY(185, time);
             ctx.moveTo(185, snoutY);
 
-            // --- 1. 上半身：吻部 -> 額頭 -> 背部 -> 背鰭 (UPWARD / Positive -Y) ---
+            // --- 1. 上半身：吻部 -> 額頭 -> 背部 -> 背鰭 ---
             ctx.quadraticCurveTo(165, getSpineY(165, time) + 3, 152, getSpineY(152, time) + 8);
             ctx.quadraticCurveTo(120, getSpineY(120, time) + 37, 68, getSpineY(68, time) + 40);
 
-            // 背鰭 (Dorsal Fin - 向上凸出)
+            // 背鰭 (Dorsal Fin)
             const dBaseY = getSpineY(14, time);
             ctx.lineTo(20, dBaseY + 37);
             ctx.quadraticCurveTo(-7, dBaseY + 82, -30, dBaseY + 86);
@@ -126,11 +129,11 @@
             ctx.quadraticCurveTo(-182, tailY + 21, -175, tailY);
             ctx.quadraticCurveTo(-182, tailY - 21, -172, tailY - 42);
 
-            // --- 2. 下半身：尾柄下緣 -> 腹部 -> 胸鰭 -> 下巴 (DOWNWARD / Positive +Y) ---
+            // --- 2. 下半身：尾柄下緣 -> 腹部 -> 胸鰭 -> 下巴 ---
             ctx.lineTo(-145, getSpineY(-145, time) - 8);
             ctx.quadraticCurveTo(-80, getSpineY(-80, time) - 21, -26, getSpineY(-26, time) - 29);
 
-            // 胸鰭 (Pectoral Flipper - 向下延伸)
+            // 胸鰭 (Pectoral Flipper)
             const pBaseY = getSpineY(33, time);
             ctx.lineTo(26, pBaseY - 29);
             ctx.quadraticCurveTo(-3, pBaseY - 72, -29, pBaseY - 78);
@@ -140,6 +143,7 @@
             ctx.quadraticCurveTo(106, getSpineY(106, time) - 16, 152, getSpineY(152, time) - 5);
             ctx.lineTo(185, snoutY);
             ctx.closePath();
+            ctx.restore();
         }
 
         function drawSmokyPatronus(ctx, time, pos) {
@@ -147,16 +151,20 @@
             ctx.translate(pos.x, pos.y);
             ctx.rotate(pos.angle);
 
+            // Responsive scale factor for dolphin (shrink slightly on narrow mobile screens)
+            const minDim = Math.min(width, height);
+            const dolphinScale = minDim < 600 ? 0.75 : 1.0;
+
             ctx.globalCompositeOperation = 'lighter';
 
-            // --- Pass 1: 夢幻超巨額打霧外暈 (Ultra Foggy Ambient Vapor Cloud, blur 68px) ---
+            // --- Pass 1: 超巨額打霧外暈 ---
             ctx.save();
             if (ctx.filter !== undefined) ctx.filter = 'blur(68px)';
             ctx.shadowColor = '#60d0ff';
             ctx.shadowBlur = 50;
             
-            drawDolphinMesh(ctx, time);
-            const outerGrad = ctx.createLinearGradient(185, 0, -178, 0);
+            drawDolphinMesh(ctx, time, dolphinScale);
+            const outerGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
             outerGrad.addColorStop(0, 'rgba(230, 250, 255, 0.50)');
             outerGrad.addColorStop(0.3, 'rgba(110, 205, 255, 0.30)');
             outerGrad.addColorStop(0.7, 'rgba(25, 130, 225, 0.15)');
@@ -165,12 +173,12 @@
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 2: 大範圍蒸氣過渡霧 (Wide Vapor Transition Blur, blur 40px) ---
+            // --- Pass 2: 大範圍蒸氣過渡霧 ---
             ctx.save();
             if (ctx.filter !== undefined) ctx.filter = 'blur(40px)';
 
-            drawDolphinMesh(ctx, time);
-            const transitionGrad = ctx.createLinearGradient(185, 0, -178, 0);
+            drawDolphinMesh(ctx, time, dolphinScale);
+            const transitionGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
             transitionGrad.addColorStop(0, 'rgba(255, 255, 255, 0.48)');
             transitionGrad.addColorStop(0.35, 'rgba(160, 225, 255, 0.32)');
             transitionGrad.addColorStop(0.75, 'rgba(50, 160, 245, 0.16)');
@@ -179,12 +187,12 @@
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 3: 中層軟霧輪廓 (Mid Fog Layer, blur 22px) ---
+            // --- Pass 3: 中層軟霧輪廓 ---
             ctx.save();
             if (ctx.filter !== undefined) ctx.filter = 'blur(22px)';
 
-            drawDolphinMesh(ctx, time);
-            const midGrad = ctx.createLinearGradient(185, 0, -178, 0);
+            drawDolphinMesh(ctx, time, dolphinScale);
+            const midGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
             midGrad.addColorStop(0, 'rgba(255, 255, 255, 0.55)');
             midGrad.addColorStop(0.35, 'rgba(170, 230, 255, 0.35)');
             midGrad.addColorStop(0.75, 'rgba(60, 170, 250, 0.18)');
@@ -193,12 +201,12 @@
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 4: 核心發光柔霧（ blur 16px，徹底消解所有硬線） ---
+            // --- Pass 4: 核心發光柔霧 ---
             ctx.save();
             if (ctx.filter !== undefined) ctx.filter = 'blur(16px)';
 
-            drawDolphinMesh(ctx, time);
-            const coreGrad = ctx.createLinearGradient(185, 0, -178, 0);
+            drawDolphinMesh(ctx, time, dolphinScale);
+            const coreGrad = ctx.createLinearGradient(185 * dolphinScale, 0, -178 * dolphinScale, 0);
             coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.58)');
             coreGrad.addColorStop(0.25, 'rgba(210, 240, 255, 0.35)');
             coreGrad.addColorStop(0.6, 'rgba(100, 200, 255, 0.16)');
@@ -207,22 +215,22 @@
             ctx.fill();
             ctx.restore();
 
-            // --- Pass 5: 身體週邊附著飄散靈氣雲霧 (Surrounding Vapor Aura) ---
+            // --- Pass 5: 身體週邊附著飄散靈氣雲霧 ---
             const cos = Math.cos(pos.angle);
             const sin = Math.sin(pos.angle);
 
             const keyPoints = [
-                { x: 180, y: getSpineY(180, time) },
-                { x: 50, y: getSpineY(50, time) + 35 },
-                { x: 20, y: getSpineY(20, time) - 40 },
-                { x: -100, y: getSpineY(-100, time) },
-                { x: -175, y: getSpineY(-175, time) }
+                { x: 180 * dolphinScale, y: getSpineY(180, time) * dolphinScale },
+                { x: 50 * dolphinScale, y: (getSpineY(50, time) + 35) * dolphinScale },
+                { x: 20 * dolphinScale, y: (getSpineY(20, time) - 40) * dolphinScale },
+                { x: -100 * dolphinScale, y: getSpineY(-100, time) * dolphinScale },
+                { x: -175 * dolphinScale, y: getSpineY(-175, time) * dolphinScale }
             ];
 
             for (let pt of keyPoints) {
                 if (Math.random() < 0.6) {
-                    const localX = pt.x + (Math.random() - 0.5) * 40;
-                    const localY = pt.y + (Math.random() - 0.5) * 40;
+                    const localX = pt.x + (Math.random() - 0.5) * 30 * dolphinScale;
+                    const localY = pt.y + (Math.random() - 0.5) * 30 * dolphinScale;
                     const wx = pos.x + (localX * cos - localY * sin);
                     const wy = pos.y + (localX * sin + localY * cos);
 
@@ -230,27 +238,27 @@
                         wx, wy,
                         -cos * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
                         -sin * (Math.random() * 3 + 1) + (Math.random() - 0.5) * 2,
-                        Math.random() * 38 + 28,
-                        Math.random() * 30 + 20,
+                        (Math.random() * 38 + 28) * dolphinScale,
+                        (Math.random() * 30 + 20) * dolphinScale,
                         Math.random() * Math.PI * 2,
                         Math.random() * 35 + 25
                     ));
                 }
             }
 
-            // --- Pass 6: 尾部主要流體蒸氣 (Trailing Main Tail Vapor) ---
-            const tailY = getSpineY(-178, time);
+            // --- Pass 6: 尾部主要流體蒸氣 ---
+            const tailY = getSpineY(-178, time) * dolphinScale;
             for (let k = 0; k < 5; k++) {
-                const tWy = tailY + (Math.random() - 0.5) * 35;
-                const wx = pos.x + (-170 * cos - tWy * sin);
-                const wy = pos.y + (-170 * sin + tWy * cos);
+                const tWy = tailY + (Math.random() - 0.5) * 30 * dolphinScale;
+                const wx = pos.x + (-170 * dolphinScale * cos - tWy * sin);
+                const wy = pos.y + (-170 * dolphinScale * sin + tWy * cos);
 
                 smokePuffs.push(new SmokePuff(
                     wx, wy,
                     -cos * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
                     -sin * (Math.random() * 5 + 2.5) + (Math.random() - 0.5) * 2,
-                    Math.random() * 38 + 25,
-                    Math.random() * 30 + 18,
+                    (Math.random() * 38 + 25) * dolphinScale,
+                    (Math.random() * 30 + 18) * dolphinScale,
                     Math.random() * Math.PI * 2,
                     Math.random() * 38 + 28
                 ));
@@ -262,7 +270,7 @@
         let isAnimating = false;
         let animProgress = 0;
         let time = 0;
-        const duration = 2.6;
+        const duration = 2.8;
 
         function triggerPatronus() {
             if (isAnimating) return;
@@ -274,25 +282,33 @@
         window.addEventListener('pointerdown', triggerPatronus);
         window.addEventListener('touchstart', triggerPatronus, { passive: true });
 
-        // 精確的對角線路徑：從右下角 (width+350, height+350) 游到 左上角 (-350, -350)
+        // PERFECT MOBILE & DESKTOP PATH CALCULATION
         function getPathPos(t) {
-            const startX = width + 350;
-            const startY = height + 350;
-            const endX = -350;
-            const endY = -350;
+            // Start well outside bottom-right, End well outside top-left
+            const margin = Math.min(width, height) * 0.35 + 150;
+            const startX = width + margin;
+            const startY = height + margin;
+            const endX = -margin;
+            const endY = -margin;
 
-            // 微幅的 S 型躍動曲線，但中心完全貫穿螢幕中央
-            const curveOffset = Math.sin(t * Math.PI) * 90;
+            // Straight line interpolated position
+            const baseX = startX + (endX - startX) * t;
+            const baseY = startY + (endY - startY) * t;
 
-            const x = startX + (endX - startX) * t - curveOffset;
-            const y = startY + (endY - startY) * t + curveOffset;
+            // Curved arc amount adapted dynamically to screen aspect ratio
+            // Prevents pushing off-screen on narrow vertical mobile screens
+            const isPortrait = height > width;
+            const curveFactor = isPortrait ? width * 0.15 : Math.min(width, height) * 0.22;
 
+            const x = baseX + Math.sin(t * Math.PI) * curveFactor;
+            const y = baseY - Math.sin(t * Math.PI) * (curveFactor * 0.7);
+
+            // Calculate tangent angle for smooth dolphin rotation along curve
             const dt = 0.005;
-            const nextT = t + dt;
-            const nextCurveOffset = Math.sin(nextT * Math.PI) * 90;
-
-            const nextX = startX + (endX - startX) * nextT - nextCurveOffset;
-            const nextY = startY + (endY - startY) * nextT + nextCurveOffset;
+            const nextBaseX = startX + (endX - startX) * (t + dt);
+            const nextBaseY = startY + (endY - startY) * (t + dt);
+            const nextX = nextBaseX + Math.sin((t + dt) * Math.PI) * curveFactor;
+            const nextY = nextBaseY - Math.sin((t + dt) * Math.PI) * (curveFactor * 0.7);
 
             const angle = Math.atan2(nextY - y, nextX - x);
 
